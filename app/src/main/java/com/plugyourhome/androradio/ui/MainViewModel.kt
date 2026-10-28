@@ -40,7 +40,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val player = PlayerConnection(application, viewModelScope)
 
     /** Code pays de l'appareil (ex. « FR »), vide si inconnu. */
-    val countryCode: String = Locale.getDefault().country.uppercase().takeIf { it.length == 2 } ?: ""
+    // Région du système (et non de l'appli) : choisir une autre langue dans l'appli
+    // ne doit pas faire perdre le pays des stations locales.
+    val countryCode: String = android.content.res.Resources.getSystem().configuration.locales[0]
+        .country.uppercase().takeIf { it.length == 2 } ?: ""
     val countryName: String = if (countryCode.isEmpty()) "" else Locale("", countryCode).displayCountry
 
     /** 10 dernières stations écoutées. */
