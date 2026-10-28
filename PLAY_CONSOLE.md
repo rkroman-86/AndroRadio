@@ -48,12 +48,18 @@ Tout ce qui est préparé dans le dépôt, et les réponses à donner dans la Pl
 - **Coordonnées** : adresse e-mail de contact (obligatoire, visible publiquement), site web optionnel (le dépôt GitHub)
 - **Langue par défaut** : anglais (en-US) ; ajouter les traductions fr-FR et ru-RU depuis `fastlane/`.
 
-### Captures d'écran — attention aux logos
-C'est le principal risque de refus (politique « propriété intellectuelle » : pas de marques ni logos d'autrui pouvant créer une confusion).
-- Choisir pour les captures des stations **peu connues** ou dont le logo est absent (icône radio de l'appli).
-- Éviter les grandes marques (RTL, RMC, NRJ, BBC…) dans les captures et dans le texte.
-- Téléphone : au moins 2 captures (4 à 8 conseillées), format portrait.
-- Tablette 7" et 10" : facultatif, mais nécessaire pour apparaître comme « conçue pour les tablettes ».
+### Captures d'écran — déjà générées, sans aucune marque de tiers
+Les captures sont produites automatiquement (stations, logos et pochettes fictifs dessinés pour l'appli) par le workflow « Store screenshots », à chaque changement d'interface :
+
+| Format Play | Dossier (par langue) | Taille |
+|---|---|---|
+| Téléphone | `fastlane/metadata/android/<langue>/images/phoneScreenshots/` | 1233 × 2460 |
+| Tablette 7" | `…/sevenInchScreenshots/` | 1200 × 1920 |
+| Tablette 10" | `…/tenInchScreenshots/` | 1600 × 2560 |
+
+Langues : `en-US`, `fr-FR`, `ru-RU`. Trois écrans : accueil, favoris, recherche.
+Pour les régénérer à la main : onglet *Actions* → *Store screenshots* → *Run workflow*.
+Ne pas utiliser de captures réelles avec de vraies stations (logos, pochettes et noms de marques).
 
 ## 5. « Contenu de l'appli » — réponses à donner
 
