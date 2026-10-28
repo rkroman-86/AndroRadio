@@ -1,11 +1,13 @@
 package com.plugyourhome.androradio.ui
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -48,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.plugyourhome.androradio.R
 import com.plugyourhome.androradio.data.Station
+import com.plugyourhome.androradio.data.Track
 import com.plugyourhome.androradio.playback.PlayerUiState
 
 /**
@@ -75,9 +78,12 @@ fun HomeScreen(vm: MainViewModel) {
                 .safeDrawingPadding()
                 .padding(horizontal = 8.dp, vertical = 6.dp),
         ) {
+            // Hauteurs relatives : en cours 1,25 · trois bandes de stations 1 · contrôles 0,5
             val band = Modifier.weight(1f)
+            val track by vm.track.collectAsStateWithLifecycle()
+            val trackArt by vm.trackArt.collectAsStateWithLifecycle()
 
-            NowPlayingBand(current, player, band)
+            NowPlayingBand(current, player, track, trackArt, Modifier.weight(1.25f))
 
             StationBand(
                 title = stringResource(R.string.band_recent),
@@ -110,7 +116,7 @@ fun HomeScreen(vm: MainViewModel) {
                 onPlayStop = vm::togglePlayStop,
                 onFavorites = { vm.openFavorites() },
                 onSearch = vm::openSearch,
-                modifier = band,
+                modifier = Modifier.weight(0.5f),
             )
         }
     }
@@ -122,6 +128,7 @@ fun HomeScreen(vm: MainViewModel) {
             currentUuid = currentUuid,
             onSave = vm::saveFavorite,
             onDelete = vm::deleteFavorite,
+            onMove = vm::moveFavorite,
             onPlay = {
                 vm.play(it)
                 vm.closeFavorites()
@@ -151,57 +158,85 @@ fun HomeScreen(vm: MainViewModel) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun NowPlayingBand(station: Station?, player: PlayerUiState, modifier: Modifier) {
+private fun NowPlayingBand(
+    station: Station?,
+    player: PlayerUiState,
+    track: Track?,
+    trackArt: String?,
+    modifier: Modifier,
+) {
     Band(modifier) {
         Box(Modifier.fillMaxSize()) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxSize()) {
-                if (station != null) {
-                    StationArt(station.favicon, Modifier.fillMaxHeight().aspectRatio(1f), corner = 14.dp)
-                } else {
-                    StationArt(null, Modifier.fillMaxHeight().aspectRatio(1f), corner = 14.dp)
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f).padding(end = 28.dp)) {
-                    Text(
-                        stringResource(R.string.band_now_playing),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        station?.displayName ?: stringResource(R.string.no_station),
-                        style = MaterialTheme.typography.titleLarge,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    if (station != null) {
-                        val status = when {
-                            player.hasError -> stringResource(R.string.playback_error)
-                            player.isBuffering -> stringResource(R.string.connecting)
-                            player.isPlaying -> player.nowPlaying ?: stringResource(R.string.status_live)
-                            else -> stringResource(R.string.status_stopped)
-                        }
+            Column(Modifier.fillMaxSize()) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    // Pochette du morceau si trouvée, sinon logo de la station
+                    Crossfade(
+                        targetState = trackArt ?: station?.favicon,
+                        label = "art",
+                        modifier = Modifier.fillMaxHeight().aspectRatio(1f),
+                    ) { url ->
+                        StationArt(url, Modifier.fillMaxSize(), corner = 14.dp)
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f).padding(end = 28.dp)) {
                         Text(
-                            status,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (player.hasError) MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            modifier = Modifier.basicMarquee(),
+                            stringResource(R.string.band_now_playing),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
                         )
-                        if (station.details.isNotBlank()) {
+                        Text(
+                            station?.displayName ?: stringResource(R.string.no_station),
+                            style = MaterialTheme.typography.titleLarge,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        if (station != null) {
+                            val status = when {
+                                player.hasError -> stringResource(R.string.playback_error)
+                                player.isBuffering -> stringResource(R.string.connecting)
+                                player.isPlaying -> stringResource(R.string.status_live)
+                                else -> stringResource(R.string.status_stopped)
+                            }
                             Text(
-                                station.details,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                status,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (player.hasError) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
                             )
+                            if (station.details.isNotBlank()) {
+                                Text(
+                                    station.details,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                        if (player.isBuffering) {
+                            LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 6.dp))
                         }
                     }
-                    if (player.isBuffering) {
-                        LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 6.dp))
-                    }
                 }
+                // Sous la pochette : artiste puis titre du morceau
+                Spacer(Modifier.size(6.dp))
+                Text(
+                    track?.artist ?: "—",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (track?.artist != null) MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.outline,
+                    maxLines = 1,
+                    modifier = Modifier.fillMaxWidth().basicMarquee(),
+                )
+                Text(
+                    track?.title ?: "—",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (track != null) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.outline,
+                    maxLines = 1,
+                    modifier = Modifier.fillMaxWidth().basicMarquee(),
+                )
             }
             Box(Modifier.align(Alignment.TopEnd)) { LanguageMenu() }
         }
@@ -219,6 +254,20 @@ private fun LocalBand(
 ) {
     val title = if (vm.countryName.isNotEmpty()) stringResource(R.string.band_local, vm.countryName)
     else stringResource(R.string.band_popular)
+    val refresh: @Composable () -> Unit = {
+        IconButton(
+            onClick = vm::refreshLocal,
+            enabled = state !is LoadState.Loading,
+            modifier = Modifier.size(28.dp),
+        ) {
+            Icon(
+                Icons.Filled.Refresh,
+                contentDescription = stringResource(R.string.refresh),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
     when (state) {
         is LoadState.Loaded -> StationBand(
             title = title,
@@ -228,24 +277,22 @@ private fun LocalBand(
             emptyMessage = stringResource(R.string.no_results),
             onPlay = vm::play,
             onLongPress = onLongPress,
+            trailing = refresh,
             modifier = modifier,
         )
         else -> Band(modifier) {
             Column(Modifier.fillMaxSize()) {
-                BandTitle(title)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.weight(1f)) { BandTitle(title) }
+                    refresh()
+                }
                 Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                     if (state is LoadState.Error) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                stringResource(R.string.error_loading),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.weight(1f, fill = false),
-                            )
-                            IconButton(onClick = vm::loadLocal) {
-                                Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.retry))
-                            }
-                        }
+                        Text(
+                            stringResource(R.string.error_loading),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     } else {
                         CircularProgressIndicator(Modifier.size(28.dp))
                     }
@@ -255,7 +302,7 @@ private fun LocalBand(
     }
 }
 
-/** Dernière bande : Lecture/Stop (un seul bouton), Favoris, Recherche. */
+/** Dernière bande (demi-hauteur) : Lecture/Stop (un seul bouton), Favoris, Recherche. */
 @Composable
 private fun ControlsBand(
     isActive: Boolean,
@@ -267,7 +314,7 @@ private fun ControlsBand(
 ) {
     Band(modifier) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
-            val iconSize = (maxHeight * 0.38f).coerceIn(22.dp, 44.dp)
+            val iconSize = (maxHeight * 0.45f).coerceIn(18.dp, 30.dp)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
                 ControlButton(
                     icon = if (isActive) Icons.Filled.Stop else Icons.Filled.PlayArrow,
@@ -304,20 +351,18 @@ private fun RowScope.ControlButton(
     enabled: Boolean = true,
 ) {
     val content: @Composable RowScope.() -> Unit = {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(iconSize))
-            Text(
-                label,
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-            )
-        }
+        Icon(icon, contentDescription = null, modifier = Modifier.size(iconSize))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
     val modifier = Modifier.weight(1f).fillMaxHeight()
-    val shape = RoundedCornerShape(16.dp)
-    val padding = ButtonDefaults.ContentPadding
+    val shape = RoundedCornerShape(14.dp)
+    val padding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
     if (primary) {
         Button(onClick = onClick, enabled = enabled, shape = shape, contentPadding = padding, modifier = modifier, content = content)
     } else {

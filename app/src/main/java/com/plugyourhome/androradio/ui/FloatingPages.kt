@@ -1,6 +1,10 @@
 package com.plugyourhome.androradio.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.draw.zIndex
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -109,9 +113,12 @@ fun FavoritesPage(
     currentUuid: String?,
     onSave: (Int) -> Unit,
     onDelete: (Int) -> Unit,
+    onMove: (Int, Int) -> Unit,
     onPlay: (Station) -> Unit,
     onClose: () -> Unit,
 ) {
+    val listState = rememberLazyListState()
+    val reorder = rememberReorderState(listState, onMove)
     FloatingPage(stringResource(R.string.band_favorites), onClose) {
         // Station à enregistrer
         Row(
@@ -135,12 +142,36 @@ fun FavoritesPage(
                 )
             }
         }
+        Text(
+            stringResource(R.string.favorites_reorder_hint),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 6.dp),
+        )
         HorizontalDivider()
-        LazyColumn(contentPadding = PaddingValues(vertical = 4.dp), modifier = Modifier.fillMaxSize()) {
-            itemsIndexed(slots) { index, station ->
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize().reorderable(reorder),
+        ) {
+            itemsIndexed(slots, key = { index, station -> station?.uuid ?: "empty-$index" }) { index, station ->
+                val dragging = reorder.draggingIndex == index
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
+                        .then(if (dragging) Modifier.zIndex(1f) else Modifier.animateItem())
+                        .graphicsLayer {
+                            if (dragging) {
+                                translationY = reorder.offset
+                                shadowElevation = 12f
+                                scaleX = 1.02f
+                                scaleY = 1.02f
+                            }
+                        }
+                        .background(
+                            if (dragging) MaterialTheme.colorScheme.secondaryContainer
+                            else MaterialTheme.colorScheme.surface,
+                            RoundedCornerShape(12.dp),
+                        )
                         .fillMaxWidth()
                         .clickable(enabled = station != null) { station?.let(onPlay) }
                         .padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),

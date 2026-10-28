@@ -30,4 +30,6 @@
     <string name="results_count">%1$d stations</string>
     <string name="language">Langue</string>
     <string name="language_system">Langue du système</string>
+    <string name="refresh">Proposer d’autres stations</string>
+    <string name="favorites_reorder_hint">Maintenez une ligne puis glissez-la pour changer l’ordre.</string>
 </resources>

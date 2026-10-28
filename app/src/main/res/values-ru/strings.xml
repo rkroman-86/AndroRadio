@@ -30,4 +30,6 @@
     <string name="results_count">Станций: %1$d</string>
     <string name="language">Язык</string>
     <string name="language_system">Как в системе</string>
+    <string name="refresh">Показать другие станции</string>
+    <string name="favorites_reorder_hint">Удерживайте строку и перетащите её, чтобы изменить порядок.</string>
 </resources>

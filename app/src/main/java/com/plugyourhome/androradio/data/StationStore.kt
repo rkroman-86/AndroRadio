@@ -72,6 +72,13 @@ class StationStore(context: Context, private val scope: CoroutineScope) {
         saveFavorites()
     }
 
+    /** Déplace la case [from] à la position [to] (les autres cases glissent d'un cran). */
+    fun moveFavorite(from: Int, to: Int) {
+        if (from == to || from !in 0 until FAVORITE_SLOTS || to !in 0 until FAVORITE_SLOTS) return
+        _favorites.update { list -> list.toMutableList().apply { add(to, removeAt(from)) } }
+        saveFavorites()
+    }
+
     fun addRecent(station: Station) {
         _recent.update { list ->
             (listOf(station) + list.filterNot { it.uuid == station.uuid }).take(MAX_RECENT)

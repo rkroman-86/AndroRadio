@@ -31,4 +31,6 @@
     <string name="results_count">%1$d stations</string>
     <string name="language">Language</string>
     <string name="language_system">System default</string>
+    <string name="refresh">Show other stations</string>
+    <string name="favorites_reorder_hint">Hold a row and drag it to change the order.</string>
 </resources>
