@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Antenne qui émet : point central + deux paires d'ondes. Zone sûre 66dp centrée. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- mât -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M51,56 L57,56 L61,78 L47,78 Z" />
+    <!-- émetteur -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,44 m-7,0 a7,7 0,1 1,14 0 a7,7 0,1 1,-14 0" />
+    <!-- ondes proches -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M43,33 A15,15 0,0 0,43 55 M65,33 A15,15 0,0 1,65 55" />
+    <!-- ondes lointaines -->
+    <path
+        android:strokeColor="#FFE2D9"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M36,26 A25,25 0,0 0,36 62 M72,26 A25,25 0,0 1,72 62" />
+</vector>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_discover">Découvrir</string>
+    <string name="tab_favorites">Favoris</string>
+    <string name="tab_recent">Récents</string>
+    <string name="search_hint">Rechercher une station</string>
+    <string name="clear_search">Effacer la recherche</string>
+    <string name="popular_in">Populaires — %1$s</string>
+    <string name="popular_worldwide">Populaires dans le monde</string>
+    <string name="results">Résultats (%1$d)</string>
+    <string name="worldwide">Monde</string>
+    <string name="error_loading">Impossible de charger les stations. Vérifiez votre connexion.</string>
+    <string name="retry">Réessayer</string>
+    <string name="empty_results">Aucune station trouvée.</string>
+    <string name="empty_favorites">Pas encore de favoris. Touchez le cœur d’une station pour l’ajouter.</string>
+    <string name="empty_recent">Les stations que vous écoutez apparaîtront ici.</string>
+    <string name="clear_history">Effacer</string>
+    <string name="add_favorite">Ajouter aux favoris</string>
+    <string name="remove_favorite">Retirer des favoris</string>
+    <string name="play">Lecture</string>
+    <string name="pause">Pause</string>
+    <string name="stop">Arrêt</string>
+    <string name="connecting">Connexion…</string>
+    <string name="playback_error">Flux indisponible</string>
+    <string name="now_playing">En cours de lecture</string>
+    <string name="open_website">Site de la station</string>
+    <string name="language">Langue</string>
+    <string name="language_system">Langue du système</string>
+</resources>

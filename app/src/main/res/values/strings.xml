@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">AndroRadio</string>
+    <string name="tab_discover">Discover</string>
+    <string name="tab_favorites">Favorites</string>
+    <string name="tab_recent">Recent</string>
+    <string name="search_hint">Search stations</string>
+    <string name="clear_search">Clear search</string>
+    <string name="popular_in">Popular in %1$s</string>
+    <string name="popular_worldwide">Popular worldwide</string>
+    <string name="results">Results (%1$d)</string>
+    <string name="worldwide">Worldwide</string>
+    <string name="error_loading">Could not load stations. Check your connection.</string>
+    <string name="retry">Retry</string>
+    <string name="empty_results">No station found.</string>
+    <string name="empty_favorites">No favorites yet. Tap the heart on a station to add it.</string>
+    <string name="empty_recent">Stations you listen to will appear here.</string>
+    <string name="clear_history">Clear</string>
+    <string name="add_favorite">Add to favorites</string>
+    <string name="remove_favorite">Remove from favorites</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="stop">Stop</string>
+    <string name="connecting">Connecting…</string>
+    <string name="playback_error">Stream unavailable</string>
+    <string name="now_playing">Now playing</string>
+    <string name="open_website">Station website</string>
+    <string name="language">Language</string>
+    <string name="language_system">System default</string>
+</resources>

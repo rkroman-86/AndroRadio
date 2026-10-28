@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_discover">Обзор</string>
+    <string name="tab_favorites">Избранное</string>
+    <string name="tab_recent">Недавние</string>
+    <string name="search_hint">Поиск станций</string>
+    <string name="clear_search">Очистить поиск</string>
+    <string name="popular_in">Популярные: %1$s</string>
+    <string name="popular_worldwide">Популярные в мире</string>
+    <string name="results">Результаты (%1$d)</string>
+    <string name="worldwide">Весь мир</string>
+    <string name="error_loading">Не удалось загрузить станции. Проверьте подключение.</string>
+    <string name="retry">Повторить</string>
+    <string name="empty_results">Станции не найдены.</string>
+    <string name="empty_favorites">Пока пусто. Нажмите на сердечко у станции, чтобы добавить её.</string>
+    <string name="empty_recent">Здесь появятся станции, которые вы слушали.</string>
+    <string name="clear_history">Очистить</string>
+    <string name="add_favorite">Добавить в избранное</string>
+    <string name="remove_favorite">Удалить из избранного</string>
+    <string name="play">Воспроизвести</string>
+    <string name="pause">Пауза</string>
+    <string name="stop">Стоп</string>
+    <string name="connecting">Подключение…</string>
+    <string name="playback_error">Поток недоступен</string>
+    <string name="now_playing">Сейчас играет</string>
+    <string name="open_website">Сайт станции</string>
+    <string name="language">Язык</string>
+    <string name="language_system">Как в системе</string>
+</resources>
