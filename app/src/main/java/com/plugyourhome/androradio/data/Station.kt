@@ -31,6 +31,7 @@ data class Station(
     val tags: String = "",
     val country: String = "",
     @SerialName("countrycode") val countryCode: String = "",
+    val language: String = "",
     val codec: String = "",
     val bitrate: Int = 0,
     val hls: Int = 0,
@@ -39,6 +40,8 @@ data class Station(
     val displayName: String get() = name.trim().ifBlank { "?" }
 
     val streamUrl: String get() = urlResolved.ifBlank { url }.trim()
+
+    val isPlayable: Boolean get() = name.isNotBlank() && streamUrl.startsWith("http", ignoreCase = true)
 
     val tagList: List<String>
         get() = tags.split(',').map { it.trim() }.filter { it.isNotEmpty() }

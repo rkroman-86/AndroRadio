@@ -1,42 +1,39 @@
 package com.plugyourhome.androradio.ui
 
+import android.app.LocaleManager
+import android.os.Build
+import android.os.LocaleList
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Radio
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,256 +43,252 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import com.plugyourhome.androradio.R
 import com.plugyourhome.androradio.data.Station
-import com.plugyourhome.androradio.playback.PlayerUiState
 
-/** Logo de la station ; icône radio tant que l'image n'est pas chargée ou si elle manque. */
+/** Pochette de la station (son logo) ; icône radio tant qu'elle n'est pas chargée ou si elle manque. */
 @Composable
-fun StationLogo(url: String, size: Dp, modifier: Modifier = Modifier) {
+fun StationArt(url: String?, modifier: Modifier = Modifier, corner: Dp = 12.dp) {
     var loaded by remember(url) { mutableStateOf(false) }
     Box(
         modifier = modifier
-            .size(size)
-            .clip(RoundedCornerShape(size / 5))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            .clip(RoundedCornerShape(corner))
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
         contentAlignment = Alignment.Center,
     ) {
         if (!loaded) {
             Icon(
                 Icons.Filled.Radio,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(size / 2),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                modifier = Modifier.fillMaxSize(0.45f),
             )
         }
-        if (url.isNotBlank()) {
+        if (!url.isNullOrBlank()) {
             AsyncImage(
                 model = url,
                 contentDescription = null,
-                contentScale = ContentScale.Fit,
+                contentScale = ContentScale.Crop,
                 onState = { loaded = it is AsyncImagePainter.State.Success },
-                modifier = Modifier.fillMaxSize().padding(size / 16),
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }
 }
 
+/** Case vide (favori non attribué). */
 @Composable
-fun FavoriteButton(isFavorite: Boolean, onClick: () -> Unit) {
-    IconButton(onClick = onClick) {
-        Icon(
-            if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-            contentDescription = stringResource(if (isFavorite) R.string.remove_favorite else R.string.add_favorite),
-            tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-fun StationCard(
-    station: Station,
-    isFavorite: Boolean,
-    isCurrent: Boolean,
-    isActive: Boolean,
-    onClick: () -> Unit,
-    onToggleFavorite: () -> Unit,
-) {
-    Card(
-        onClick = onClick,
-        colors = CardDefaults.cardColors(
-            containerColor = if (isCurrent) MaterialTheme.colorScheme.primaryContainer
-            else MaterialTheme.colorScheme.surfaceContainer,
-        ),
-        modifier = Modifier.fillMaxWidth(),
+fun EmptyArt(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
+        contentAlignment = Alignment.Center,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
-        ) {
-            StationLogo(station.favicon, 52.dp)
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    station.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (station.details.isNotBlank()) {
-                    Text(
-                        station.details,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                if (station.tagList.isNotEmpty()) {
-                    Text(
-                        station.tagList.take(4).joinToString(" · "),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-            if (isCurrent && isActive) {
-                Icon(
-                    Icons.Filled.GraphicEq,
-                    contentDescription = stringResource(R.string.now_playing),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
-            FavoriteButton(isFavorite, onToggleFavorite)
-        }
-    }
-}
-
-/** Grille adaptative : une colonne sur téléphone, plusieurs sur tablette. */
-@Composable
-fun StationGrid(
-    stations: List<Station>,
-    favoriteIds: Set<String>,
-    player: PlayerUiState,
-    emptyText: String,
-    onPlay: (Station) -> Unit,
-    onToggleFavorite: (Station) -> Unit,
-    header: (@Composable () -> Unit)? = null,
-) {
-    if (stations.isEmpty()) {
-        Column(Modifier.fillMaxSize()) {
-            header?.let { Box(Modifier.padding(horizontal = 16.dp)) { it() } }
-            MessageView(emptyText)
-        }
-        return
-    }
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 320.dp),
-        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        if (header != null) {
-            item(span = { GridItemSpan(maxLineSpan) }) { Box(Modifier.padding(horizontal = 4.dp)) { header() } }
-        }
-        items(stations, key = { it.uuid }) { station ->
-            val current = player.station?.uuid == station.uuid
-            StationCard(
-                station = station,
-                isFavorite = station.uuid in favoriteIds,
-                isCurrent = current,
-                isActive = current && player.isActive,
-                onClick = { onPlay(station) },
-                onToggleFavorite = { onToggleFavorite(station) },
-            )
-        }
-    }
-}
-
-@Composable
-fun MessageView(text: String, actionLabel: String? = null, onAction: (() -> Unit)? = null) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxSize().padding(32.dp),
-    ) {
-        Icon(
-            Icons.Filled.Radio,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.outline,
-            modifier = Modifier.size(48.dp),
-        )
-        Spacer(Modifier.size(12.dp))
         Text(
-            text,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
+            stringResource(R.string.empty),
+            style = MaterialTheme.typography.labelSmall,
+            fontStyle = FontStyle.Italic,
+            color = MaterialTheme.colorScheme.outline,
         )
-        if (actionLabel != null && onAction != null) {
-            TextButton(onClick = onAction) { Text(actionLabel) }
-        }
+    }
+}
+
+/** Une bande du haut en bas de l'écran : fond arrondi commun. */
+@Composable
+fun Band(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = RoundedCornerShape(18.dp),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Box(Modifier.padding(8.dp)) { content() }
     }
 }
 
 @Composable
-fun LoadingView() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-}
-
-/** Texte d'état sous le nom de la station : erreur, connexion, titre en cours ou infos. */
-@Composable
-fun playerSubtitle(state: PlayerUiState): String = when {
-    state.hasError -> stringResource(R.string.playback_error)
-    state.isBuffering -> stringResource(R.string.connecting)
-    else -> state.nowPlaying ?: state.station?.details.orEmpty()
-}
-
-@Composable
-fun PlayPauseIcon(state: PlayerUiState, modifier: Modifier = Modifier) {
-    Icon(
-        if (state.isActive) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-        contentDescription = stringResource(if (state.isActive) R.string.pause else R.string.play),
-        modifier = modifier,
+fun BandTitle(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
     )
+}
+
+/**
+ * Bande de stations défilant de gauche à droite, 4 visibles à la fois.
+ * [slots] peut contenir des cases vides (null) pour les favoris.
+ */
+@Composable
+fun StationBand(
+    title: String,
+    slots: List<Station?>,
+    currentUuid: String?,
+    isActive: Boolean,
+    emptyMessage: String,
+    onPlay: (Station) -> Unit,
+    onLongPress: (Station) -> Unit,
+    modifier: Modifier = Modifier,
+    numbered: Boolean = false,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    Band(modifier) {
+        Column(Modifier.fillMaxSize()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { BandTitle(title) }
+                trailing?.invoke()
+            }
+            BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                if (slots.isEmpty()) {
+                    Text(
+                        emptyMessage,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.align(Alignment.Center).padding(horizontal = 16.dp),
+                    )
+                } else {
+                    val gap = 6.dp
+                    val tileWidth = (maxWidth - gap * (VISIBLE_TILES - 1)) / VISIBLE_TILES
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(gap), modifier = Modifier.fillMaxSize()) {
+                        itemsIndexed(slots) { index, station ->
+                            StationTile(
+                                station = station,
+                                number = if (numbered) index + 1 else null,
+                                isCurrent = station != null && station.uuid == currentUuid,
+                                isActive = isActive,
+                                onPlay = onPlay,
+                                onLongPress = onLongPress,
+                                modifier = Modifier.width(tileWidth).fillMaxHeight(),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MiniPlayer(
-    state: PlayerUiState,
-    isFavorite: Boolean,
-    onOpen: () -> Unit,
-    onTogglePlay: () -> Unit,
-    onToggleFavorite: () -> Unit,
+fun StationTile(
+    station: Station?,
+    number: Int?,
+    isCurrent: Boolean,
+    isActive: Boolean,
+    onPlay: (Station) -> Unit,
+    onLongPress: (Station) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val station = state.station ?: return
-    Surface(
-        onClick = onOpen,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 3.dp,
-        modifier = modifier.fillMaxWidth(),
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (isCurrent) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer)
+            .combinedClickable(
+                enabled = station != null,
+                onClick = { station?.let(onPlay) },
+                onLongClick = { station?.let(onLongPress) },
+            )
+            .padding(3.dp),
     ) {
-        Column {
-            if (state.isBuffering) {
-                LinearProgressIndicator(Modifier.fillMaxWidth())
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            ) {
-                StationLogo(station.favicon, 44.dp)
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            val side = min(maxWidth, maxHeight)
+            Box(Modifier.size(side)) {
+                if (station != null) StationArt(station.favicon, Modifier.fillMaxSize())
+                else EmptyArt(Modifier.fillMaxSize())
+                if (number != null) {
                     Text(
-                        station.displayName,
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        playerSubtitle(state),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (state.hasError) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        modifier = Modifier.basicMarquee(),
+                        number.toString(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(3.dp)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.85f), CircleShape)
+                            .padding(horizontal = 5.dp),
                     )
                 }
-                FavoriteButton(isFavorite, onToggleFavorite)
-                FilledIconButton(onClick = onTogglePlay) { PlayPauseIcon(state) }
+                if (isCurrent && isActive) {
+                    Icon(
+                        Icons.Filled.GraphicEq,
+                        contentDescription = stringResource(R.string.band_now_playing),
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(3.dp)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape)
+                            .padding(2.dp)
+                            .size(14.dp),
+                    )
+                }
+            }
+        }
+        Text(
+            station?.displayName ?: stringResource(R.string.empty),
+            style = MaterialTheme.typography.labelSmall,
+            fontStyle = if (station == null) FontStyle.Italic else FontStyle.Normal,
+            color = if (station == null) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+        )
+    }
+}
+
+/** Choix de la langue de l'appli (Android 13+ ; avant, l'appli suit la langue du système). */
+@Composable
+fun LanguageMenu() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) LanguageMenuApi33()
+}
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+@Composable
+private fun LanguageMenuApi33() {
+    val context = LocalContext.current
+    var open by remember { mutableStateOf(false) }
+    val options = listOf(
+        null to stringResource(R.string.language_system),
+        "en" to "English",
+        "fr" to "Français",
+        "ru" to "Русский",
+    )
+    Box {
+        IconButton(onClick = { open = true }, modifier = Modifier.size(36.dp)) {
+            Icon(
+                Icons.Filled.Language,
+                contentDescription = stringResource(R.string.language),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            options.forEach { (tag, label) ->
+                DropdownMenuItem(
+                    text = { Text(label) },
+                    onClick = {
+                        open = false
+                        context.getSystemService(LocaleManager::class.java).applicationLocales =
+                            if (tag == null) LocaleList.getEmptyLocaleList() else LocaleList.forLanguageTags(tag)
+                    },
+                )
             }
         }
     }
 }
+
+const val VISIBLE_TILES = 4

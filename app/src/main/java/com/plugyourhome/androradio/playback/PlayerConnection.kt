@@ -81,10 +81,8 @@ class PlayerConnection(context: Context, scope: CoroutineScope) {
         }
     }
 
-    fun stop() = withController {
-        this.stop()
-        clearMediaItems()
-    }
+    /** Arrête le flux mais garde la station chargée (elle reste affichée comme station actuelle). */
+    fun stop() = withController { this.stop() }
 
     fun release() {
         controller?.removeListener(listener)

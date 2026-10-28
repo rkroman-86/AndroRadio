@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import com.plugyourhome.androradio.ui.AndroRadioScreen
+import com.plugyourhome.androradio.ui.HomeScreen
 import com.plugyourhome.androradio.ui.MainViewModel
 import com.plugyourhome.androradio.ui.theme.AndroRadioTheme
 
@@ -18,7 +18,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             AndroRadioTheme {
-                AndroRadioScreen(viewModel)
+                HomeScreen(viewModel)
             }
         }
     }
