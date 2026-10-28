@@ -1,13 +1,8 @@
 package com.plugyourhome.androradio.screenshots
 
-import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureScreenRoboImage
@@ -36,26 +31,21 @@ abstract class StoreScreenshots(private val folder: String) {
     @get:Rule
     val compose = createComposeRule()
 
-    private val locales = listOf("en-US", "fr-FR", "ru-RU")
-
     private fun output(locale: String, index: Int, scene: String) =
         "../fastlane/metadata/android/$locale/images/$folder/${index}_$scene.png"
 
-    /** Affiche [content] dans chaque langue et enregistre une capture de tout l'écran (fenêtres flottantes comprises). */
-    private fun shoot(index: Int, scene: String, content: @Composable () -> Unit) {
-        var locale by mutableStateOf(locales.first())
+    /**
+     * Affiche [content] et enregistre une capture de tout l'écran (fenêtres flottantes comprises).
+     * La langue vient du @Config de chaque test : elle s'applique aussi aux fenêtres flottantes.
+     */
+    private fun shoot(locale: String, index: Int, scene: String, content: @Composable () -> Unit) {
         compose.setContent {
-            Localized(locale) {
-                CompositionLocalProvider(LocalArtOverride provides DemoData::painter) {
-                    AndroRadioTheme(darkTheme = true, dynamicColor = false) { content() }
-                }
+            CompositionLocalProvider(LocalArtOverride provides DemoData::painter) {
+                AndroRadioTheme(darkTheme = true, dynamicColor = false) { content() }
             }
         }
-        for (tag in locales) {
-            locale = tag
-            compose.waitForIdle()
-            captureScreenRoboImage(output(tag, index, scene))
-        }
+        compose.waitForIdle()
+        captureScreenRoboImage(output(locale, index, scene))
     }
 
     @Composable
@@ -75,11 +65,8 @@ abstract class StoreScreenshots(private val folder: String) {
         )
     }
 
-    @Test
-    fun home() = shoot(1, "home") { Home() }
-
-    @Test
-    fun favorites() = shoot(2, "favorites") {
+    @Composable
+    private fun FavoritesScene() {
         Home()
         FavoritesPage(
             slots = DemoData.favorites,
@@ -89,8 +76,8 @@ abstract class StoreScreenshots(private val folder: String) {
         )
     }
 
-    @Test
-    fun search() = shoot(3, "search") {
+    @Composable
+    private fun SearchScene() {
         Home()
         SearchPage(
             query = "jazz",
@@ -99,15 +86,33 @@ abstract class StoreScreenshots(private val folder: String) {
             onQueryChange = {}, onSearch = {}, onPlay = {}, onAddFavorite = {}, onClose = {},
         )
     }
-}
 
-/** Fournit des ressources (textes) dans la langue demandée. */
-@Composable
-private fun Localized(tag: String, content: @Composable () -> Unit) {
-    val base = LocalContext.current
-    val config = Configuration(base.resources.configuration).apply { setLocale(Locale.forLanguageTag(tag)) }
-    val context = base.createConfigurationContext(config)
-    CompositionLocalProvider(LocalContext provides context, LocalConfiguration provides config) { content() }
+    @Test @Config(qualifiers = "+en-rUS")
+    fun home_en() = shoot("en-US", 1, "home") { Home() }
+
+    @Test @Config(qualifiers = "+fr-rFR")
+    fun home_fr() = shoot("fr-FR", 1, "home") { Home() }
+
+    @Test @Config(qualifiers = "+ru-rRU")
+    fun home_ru() = shoot("ru-RU", 1, "home") { Home() }
+
+    @Test @Config(qualifiers = "+en-rUS")
+    fun favorites_en() = shoot("en-US", 2, "favorites") { FavoritesScene() }
+
+    @Test @Config(qualifiers = "+fr-rFR")
+    fun favorites_fr() = shoot("fr-FR", 2, "favorites") { FavoritesScene() }
+
+    @Test @Config(qualifiers = "+ru-rRU")
+    fun favorites_ru() = shoot("ru-RU", 2, "favorites") { FavoritesScene() }
+
+    @Test @Config(qualifiers = "+en-rUS")
+    fun search_en() = shoot("en-US", 3, "search") { SearchScene() }
+
+    @Test @Config(qualifiers = "+fr-rFR")
+    fun search_fr() = shoot("fr-FR", 3, "search") { SearchScene() }
+
+    @Test @Config(qualifiers = "+ru-rRU")
+    fun search_ru() = shoot("ru-RU", 3, "search") { SearchScene() }
 }
 
 // Formats demandés par Google Play (rapport largeur/hauteur ≤ 2)
