@@ -24,6 +24,14 @@ android {
     }
 
     signingConfigs {
+        // Clé de test commune à tous les builds (sinon chaque build CI a sa propre clé
+        // et Android refuse la mise à jour). Ne sert qu'aux APK de test, jamais à Google Play.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         if (hasReleaseSigning) {
             create("release") {
                 storeFile = file(keystoreFile!!)
@@ -45,6 +53,7 @@ android {
             if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
         }
         debug {
+            signingConfig = signingConfigs.getByName("debug")
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
