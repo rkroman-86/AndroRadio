@@ -13,14 +13,20 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
+import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Client de l'API publique Radio Browser (https://api.radio-browser.info).
+ * Client de l'API publique Radio Browser (https://www.radio-browser.info).
  *
- * Les serveurs sont fournis par Radio Browser lui-même (liste officielle), mélangés au hasard.
- * Si un serveur ne répond pas, la même requête est relancée sur le suivant.
+ * Règles d'usage de l'API (https://docs.radio-browser.info) appliquées ici :
+ * - User-Agent descriptif « AndroRadio/version » sur chaque requête ;
+ * - serveurs découverts par résolution DNS de all.api.radio-browser.info, côté client,
+ *   et choisis au hasard ; /json/servers n'est utilisé que si le DNS échoue ;
+ * - si un serveur ne répond pas, la même requête est relancée sur le suivant ;
+ * - chaque écoute lancée est signalée via /json/url/{uuid} (compteur de clics).
+ * Les données de Radio Browser sont dans le domaine public.
  */
 class RadioBrowserApi(private val client: OkHttpClient = defaultClient()) {
 
@@ -32,14 +38,27 @@ class RadioBrowserApi(private val client: OkHttpClient = defaultClient()) {
 
     private suspend fun servers(): List<String> {
         servers.takeIf { it.isNotEmpty() }?.let { return it }
-        val discovered = runCatching {
-            AppJson.decodeFromString<List<Server>>(get("https://all.api.radio-browser.info/json/servers".toHttpUrl()))
-                .map { it.name.trim() }
-                .filter { it.endsWith("radio-browser.info") }
-                .distinct()
-        }.getOrDefault(emptyList())
+        val discovered = discoverByDns().ifEmpty { discoverByApi() }
         return discovered.ifEmpty { FALLBACK_SERVERS }.shuffled().also { servers = it }
     }
+
+    /** Méthode recommandée : toutes les adresses de all.api.radio-browser.info, puis leur nom (DNS inverse). */
+    private suspend fun discoverByDns(): List<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            InetAddress.getAllByName(DNS_ENTRY)
+                .map { it.canonicalHostName.trim().trimEnd('.') }
+                .filter { it.endsWith(".radio-browser.info") && it != DNS_ENTRY }
+                .distinct()
+        }.getOrDefault(emptyList())
+    }
+
+    /** Repli prévu par la doc quand le DNS ne donne rien. */
+    private suspend fun discoverByApi(): List<String> = runCatching {
+        AppJson.decodeFromString<List<Server>>(get("https://$DNS_ENTRY/json/servers".toHttpUrl()))
+            .map { it.name.trim() }
+            .filter { it.endsWith(".radio-browser.info") }
+            .distinct()
+    }.getOrDefault(emptyList())
 
     private suspend fun get(url: HttpUrl): String = withContext(Dispatchers.IO) {
         val request = Request.Builder().url(url).header("User-Agent", USER_AGENT).build()
@@ -135,7 +154,9 @@ class RadioBrowserApi(private val client: OkHttpClient = defaultClient()) {
     }
 
     companion object {
+        /** Format demandé par Radio Browser : nom/version. */
         val USER_AGENT = "AndroRadio/${BuildConfig.VERSION_NAME}"
+        private const val DNS_ENTRY = "all.api.radio-browser.info"
         private val FALLBACK_SERVERS = listOf(
             "de1.api.radio-browser.info",
             "de2.api.radio-browser.info",

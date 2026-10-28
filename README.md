@@ -7,7 +7,7 @@ Interface en anglais, français et russe.
 
 - Recherche de stations dans l'annuaire libre [Radio Browser](https://www.radio-browser.info) : par nom, genre, pays de l'appareil ou monde entier.
 - Lecture en arrière-plan (Media3 / ExoPlayer) : notification, écran verrouillé, boutons Bluetooth, pause si le casque est débranché, pause pendant les appels.
-- Titre en cours (métadonnées ICY), logo de la station.
+- Artiste et titre en cours (métadonnées ICY / ID3), pochette d'album via MusicBrainz et Cover Art Archive, sinon logo de la station.
 - Flux MP3, AAC, OGG, HLS ; flux `http://` acceptés.
 - Reconnexion automatique (3 essais) si un flux décroche.
 - Favoris et historique (50 dernières stations), stockés uniquement sur l'appareil.
@@ -60,6 +60,11 @@ Onglet *Actions* → dernier build → artefact `androradio-debug-apk`.
 
 ## Publier sur Google Play
 
+Guide complet (fiche, contenu de l'appli, sécurité des données, test fermé) : [PLAY_CONSOLE.md](PLAY_CONSOLE.md).
+Politique de confidentialité : [PRIVACY.md](PRIVACY.md). Textes de la fiche et images : `fastlane/metadata/android/`.
+
+### Signature
+
 1. Créer une clé de signature (une seule fois, à conserver précieusement) :
    ```bash
    keytool -genkeypair -v -keystore androradio-release.jks -alias androradio \
@@ -73,13 +78,8 @@ Onglet *Actions* → dernier build → artefact `androradio-debug-apk`.
 3. Le workflow produit alors aussi l'artefact `androradio-release` (`.aab` pour la Play Console).
 4. Avant chaque nouvelle version : augmenter `versionCode` et `versionName` dans `app/build.gradle.kts`.
 
-Icône 512 × 512 pour la fiche Play : `store/play_icon_512.png`.
-
-### Fiche « Sécurité des données »
-
-Aucune donnée collectée ni partagée : pas de compte, pas de publicité, pas d'analytics.
-Les favoris et l'historique restent sur l'appareil. Les seules requêtes réseau vont vers
-Radio Browser (annuaire) et vers les serveurs des radios écoutées.
+Icône 512 × 512 et bannière 1024 × 500 : `fastlane/metadata/android/en-US/images/`.
+Réponses « Sécurité des données » et « Contenu de l'appli » : voir [PLAY_CONSOLE.md](PLAY_CONSOLE.md).
 
 ## Feuille de route
 
@@ -91,4 +91,6 @@ Radio Browser (annuaire) et vers les serveurs des radios écoutées.
 
 ## Crédits
 
-Annuaire des stations : [Radio Browser](https://www.radio-browser.info), base communautaire libre.
+- Annuaire des stations : [Radio Browser](https://www.radio-browser.info), base communautaire libre, données dans le domaine public. AndroRadio applique les [règles d'usage de l'API](https://docs.radio-browser.info) : User-Agent descriptif, serveurs trouvés par DNS, compteur d'écoutes.
+- Pochettes d'album : [MusicBrainz](https://musicbrainz.org) et [Cover Art Archive](https://coverartarchive.org) (User-Agent avec contact, 1 requête/s au plus).
+- AndroRadio n'héberge, n'enregistre ni ne télécharge aucun contenu : les flux sont diffusés par les stations.

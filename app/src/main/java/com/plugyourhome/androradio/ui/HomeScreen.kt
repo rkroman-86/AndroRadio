@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -83,7 +84,7 @@ fun HomeScreen(vm: MainViewModel) {
             val track by vm.track.collectAsStateWithLifecycle()
             val trackArt by vm.trackArt.collectAsStateWithLifecycle()
 
-            NowPlayingBand(current, player, track, trackArt, Modifier.weight(1.25f))
+            NowPlayingBand(current, player, track, trackArt, vm::openAbout, Modifier.weight(1.25f))
 
             StationBand(
                 title = stringResource(R.string.band_recent),
@@ -137,6 +138,9 @@ fun HomeScreen(vm: MainViewModel) {
         )
     }
 
+    val aboutOpen by vm.aboutOpen.collectAsStateWithLifecycle()
+    if (aboutOpen) AboutPage(onClose = vm::closeAbout)
+
     if (searchOpen) {
         val query by vm.searchQuery.collectAsStateWithLifecycle()
         val results by vm.search.collectAsStateWithLifecycle()
@@ -163,6 +167,7 @@ private fun NowPlayingBand(
     player: PlayerUiState,
     track: Track?,
     trackArt: String?,
+    onAbout: () -> Unit,
     modifier: Modifier,
 ) {
     Band(modifier) {
@@ -178,7 +183,7 @@ private fun NowPlayingBand(
                         StationArt(url, Modifier.fillMaxSize(), corner = 14.dp)
                     }
                     Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f).padding(end = 28.dp)) {
+                    Column(Modifier.weight(1f).padding(end = 34.dp)) {
                         Text(
                             stringResource(R.string.band_now_playing),
                             style = MaterialTheme.typography.labelMedium,
@@ -238,7 +243,17 @@ private fun NowPlayingBand(
                     modifier = Modifier.fillMaxWidth().basicMarquee(),
                 )
             }
-            Box(Modifier.align(Alignment.TopEnd)) { LanguageMenu() }
+            Column(Modifier.align(Alignment.TopEnd)) {
+                LanguageMenu()
+                IconButton(onClick = onAbout, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        Icons.Outlined.Info,
+                        contentDescription = stringResource(R.string.about),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
         }
     }
 }

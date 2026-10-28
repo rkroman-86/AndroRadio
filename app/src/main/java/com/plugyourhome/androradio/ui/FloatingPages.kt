@@ -372,3 +372,72 @@ private fun CenterMessage(text: String) {
         )
     }
 }
+
+/** Page « À propos » : version, sources des données, confidentialité, logiciels libres. */
+@Composable
+fun AboutPage(onClose: () -> Unit) {
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+    fun open(url: String) = runCatching { uriHandler.openUri(url) }
+
+    FloatingPage(stringResource(R.string.about), onClose) {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        ) {
+            item {
+                Text(
+                    stringResource(R.string.about_by, com.plugyourhome.androradio.BuildConfig.VERSION_NAME),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            item {
+                AboutSection(R.string.about_directory_title, R.string.about_directory_text)
+                LinkButton("radio-browser.info") { open(URL_RADIO_BROWSER) }
+            }
+            item {
+                AboutSection(R.string.about_art_title, R.string.about_art_text)
+                Row {
+                    LinkButton("MusicBrainz") { open(URL_MUSICBRAINZ) }
+                    LinkButton("Cover Art Archive") { open(URL_COVER_ART) }
+                }
+            }
+            item { AboutSection(R.string.about_streams_title, R.string.about_streams_text) }
+            item {
+                AboutSection(R.string.about_privacy_title, R.string.about_privacy_text)
+                LinkButton(stringResource(R.string.about_privacy_link)) { open(URL_PRIVACY) }
+            }
+            item {
+                AboutSection(R.string.about_opensource_title, R.string.about_opensource_text)
+                LinkButton(stringResource(R.string.about_source_code)) { open(URL_SOURCE) }
+            }
+            item { Spacer(Modifier.size(12.dp)) }
+        }
+    }
+}
+
+@Composable
+private fun AboutSection(title: Int, text: Int) {
+    Column {
+        Text(
+            stringResource(title),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(stringResource(text), style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun LinkButton(label: String, onClick: () -> Unit) {
+    TextButton(onClick = onClick, contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)) {
+        Text(label, style = MaterialTheme.typography.labelLarge)
+        Spacer(Modifier.width(12.dp))
+    }
+}
+
+const val URL_RADIO_BROWSER = "https://www.radio-browser.info"
+const val URL_MUSICBRAINZ = "https://musicbrainz.org"
+const val URL_COVER_ART = "https://coverartarchive.org"
+const val URL_SOURCE = "https://github.com/rkroman-86/AndroRadio"
+const val URL_PRIVACY = "https://github.com/rkroman-86/AndroRadio/blob/main/PRIVACY.md"

@@ -1,0 +1,1 @@
+First release: one-screen player, 20 favorite slots with drag and drop, local stations, multi-criteria search, album art, English / French / Russian.

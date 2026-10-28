@@ -1,8 +1,13 @@
 package com.plugyourhome.androradio.data
 
+import com.plugyourhome.androradio.BuildConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -30,22 +35,53 @@ data class Track(val artist: String?, val title: String) {
 }
 
 /**
- * Pochette d'album du morceau en cours, via l'API publique de recherche iTunes
- * (sans clé). Résultats gardés en cache pour ne pas refaire la même requête.
+ * Pochette d'album du morceau en cours, à partir de bases ouvertes :
+ * - MusicBrainz (https://musicbrainz.org) pour identifier l'album à partir d'« artiste + titre » ;
+ * - Cover Art Archive (https://coverartarchive.org) pour l'image elle-même.
+ *
+ * Règles MusicBrainz respectées : User-Agent avec nom, version et contact ;
+ * au plus une requête par seconde ; résultats gardés en cache.
  */
-class TrackArtwork(private val client: OkHttpClient = RadioBrowserApi.defaultClient()) {
+class TrackArtwork(client: OkHttpClient = RadioBrowserApi.defaultClient()) {
+
+    private val client = client.newBuilder().build()
+    private val noRedirectClient = client.newBuilder().followRedirects(false).followSslRedirects(false).build()
 
     @Serializable
-    private data class Result(val artworkUrl100: String = "", val artistName: String = "")
+    private data class SearchResponse(val recordings: List<Recording> = emptyList())
 
     @Serializable
-    private data class Response(val results: List<Result> = emptyList())
+    private data class Recording(
+        val score: Int = 0,
+        @SerialName("artist-credit") val artistCredit: List<ArtistCredit> = emptyList(),
+        val releases: List<Release> = emptyList(),
+    )
+
+    @Serializable
+    private data class ArtistCredit(val name: String = "")
+
+    @Serializable
+    private data class Release(
+        val id: String = "",
+        val status: String = "",
+        @SerialName("release-group") val releaseGroup: ReleaseGroup? = null,
+    )
+
+    @Serializable
+    private data class ReleaseGroup(
+        val id: String = "",
+        @SerialName("primary-type") val primaryType: String = "",
+        @SerialName("secondary-types") val secondaryTypes: List<String> = emptyList(),
+    )
 
     private val cache = Collections.synchronizedMap(object : LinkedHashMap<String, String>(64, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>?) = size > 200
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>?) = size > 300
     })
 
-    /** URL d'une pochette 600×600, ou null si rien de fiable n'est trouvé. */
+    private val throttle = Mutex()
+    private var lastMusicBrainzCall = 0L
+
+    /** URL d'une pochette (500 px), ou null si rien de fiable n'est trouvé. */
     suspend fun find(track: Track): String? {
         val artist = track.artist ?: return null // sans artiste, trop de fausses pochettes
         val key = "${artist.lowercase()}|${track.title.lowercase()}"
@@ -55,29 +91,85 @@ class TrackArtwork(private val client: OkHttpClient = RadioBrowserApi.defaultCli
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            return null // erreur réseau : on ne met pas en cache, on réessaiera
+            return null // erreur réseau : pas de cache, on réessaiera au prochain morceau
         }
         cache[key] = url.orEmpty()
         return url
     }
 
-    private suspend fun lookup(artist: String, title: String): String? = withContext(Dispatchers.IO) {
-        val url = "https://itunes.apple.com/search".toHttpUrl().newBuilder()
-            .addQueryParameter("term", "$artist $title")
-            .addQueryParameter("media", "music")
-            .addQueryParameter("entity", "song")
-            .addQueryParameter("limit", "5")
-            .build()
-        val body = client.newCall(Request.Builder().url(url).header("User-Agent", RadioBrowserApi.USER_AGENT).build())
-            .execute().use { if (it.isSuccessful) it.body?.string() else null } ?: return@withContext null
-        val results = AppJson.decodeFromString<Response>(body).results
+    private suspend fun lookup(artist: String, title: String): String? {
+        val recordings = searchRecordings(artist, title)
         val wanted = normalize(artist)
-        val match = results.firstOrNull { r ->
-            val name = normalize(r.artistName)
-            name.isNotEmpty() && (name.contains(wanted) || wanted.contains(name))
-        } ?: return@withContext null
-        match.artworkUrl100.takeIf { it.isNotBlank() }?.replace("100x100bb", "600x600bb")
+        val releases = recordings
+            .filter { it.score >= MIN_SCORE }
+            .filter { rec ->
+                val credited = normalize(rec.artistCredit.joinToString(" ") { it.name })
+                credited.isNotEmpty() && (credited.contains(wanted) || wanted.contains(credited))
+            }
+            .flatMap { it.releases }
+
+        // D'abord les albums / singles officiels, ensuite le reste (compilations, live…)
+        val ranked = releases.sortedBy { r ->
+            val group = r.releaseGroup
+            var rank = 0
+            if (!r.status.equals("Official", ignoreCase = true)) rank += 2
+            if (group?.secondaryTypes?.isNotEmpty() == true) rank += 4
+            if (group?.primaryType.orEmpty() !in setOf("Album", "Single", "EP")) rank += 1
+            rank
+        }
+        val candidates = buildList {
+            ranked.mapNotNull { it.releaseGroup?.id?.takeIf(String::isNotBlank) }.distinct().take(4)
+                .forEach { add("$COVER_ART/release-group/$it/front-500") }
+            ranked.map { it.id }.filter(String::isNotBlank).distinct().take(2)
+                .forEach { add("$COVER_ART/release/$it/front-500") }
+        }
+        return candidates.firstOrNull { exists(it) }
     }
 
+    private suspend fun searchRecordings(artist: String, title: String): List<Recording> {
+        val query = "recording:\"${escape(title)}\" AND artist:\"${escape(artist)}\""
+        val url = "https://musicbrainz.org/ws/2/recording".toHttpUrl().newBuilder()
+            .addQueryParameter("query", query)
+            .addQueryParameter("fmt", "json")
+            .addQueryParameter("limit", "10")
+            .build()
+        return throttle.withLock {
+            // MusicBrainz : environ une requête par seconde au maximum
+            val wait = lastMusicBrainzCall + MIN_INTERVAL_MS - System.currentTimeMillis()
+            if (wait > 0) delay(wait)
+            try {
+                withContext<List<Recording>>(Dispatchers.IO) {
+                    client.newCall(Request.Builder().url(url).header("User-Agent", USER_AGENT).build())
+                        .execute().use { response ->
+                            if (!response.isSuccessful) return@withContext emptyList()
+                            val body = response.body?.string() ?: return@withContext emptyList()
+                            AppJson.decodeFromString<SearchResponse>(body).recordings
+                        }
+                }
+            } finally {
+                lastMusicBrainzCall = System.currentTimeMillis()
+            }
+        }
+    }
+
+    /** Cover Art Archive répond 307 (redirection vers l'image) si une pochette existe, 404 sinon. */
+    private suspend fun exists(url: String): Boolean = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = Request.Builder().url(url).head().header("User-Agent", USER_AGENT).build()
+            noRedirectClient.newCall(request).execute().use { it.code in 200..399 }
+        }.getOrDefault(false)
+    }
+
+    private fun escape(s: String) = s.replace("\\", "\\\\").replace("\"", "\\\"")
+
     private fun normalize(s: String) = s.lowercase().filter { it.isLetterOrDigit() }
+
+    private companion object {
+        const val COVER_ART = "https://coverartarchive.org"
+        const val MIN_SCORE = 80
+        const val MIN_INTERVAL_MS = 1_100L
+
+        /** Format demandé par MusicBrainz : « Nom/version ( contact ) ». */
+        val USER_AGENT = "AndroRadio/${BuildConfig.VERSION_NAME} ( https://github.com/rkroman-86/AndroRadio )"
+    }
 }

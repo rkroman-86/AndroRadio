@@ -1,0 +1,28 @@
+AndroRadio est un lecteur de radio internet simple et rapide. Tout tient sur un seul écran, sans menus à fouiller.
+
+UN ÉCRAN, CINQ BANDES
+• En cours : station, artiste, titre et pochette d'album
+• Derniers écoutés : vos 10 dernières stations
+• Favoris : 20 cases, à réordonner par glisser-déposer
+• Stations locales : les stations populaires de votre pays, à renouveler d'un geste
+• Commandes : un seul bouton Lecture/Stop, Favoris, Recherche
+
+TROUVEZ N'IMPORTE QUELLE STATION
+Recherchez parmi des dizaines de milliers de stations par nom, genre, pays, langue, région ou codec. Les doublons sont retirés automatiquement.
+
+ÉCOUTEZ COMME VOUS VOULEZ
+• Lecture en arrière-plan, commandes sur l'écran verrouillé et dans la notification
+• Boutons suivant / précédent (notification, casque, voiture) pour passer d'un favori à l'autre
+• Reconnexion automatique si un flux décroche
+• Flux MP3, AAC, OGG et HLS
+• Affichage adapté au téléphone et à la tablette
+
+SIMPLE ET RESPECTUEUSE
+Pas de compte, pas de pub, pas de suivi. Vos favoris et votre historique restent sur votre appareil.
+
+Disponible en français, anglais et russe.
+
+CRÉDITS
+Annuaire des stations : Radio Browser (radio-browser.info), base libre tenue par la communauté.
+Pochettes : MusicBrainz et Cover Art Archive.
+AndroRadio n'héberge, n'enregistre ni ne télécharge aucun contenu : les flux sont diffusés par les stations elles-mêmes. Les noms et logos des stations appartiennent à leurs propriétaires.

@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.guava.future
+import kotlinx.coroutines.launch
 
 /**
  * Service de lecture : ExoPlayer + MediaSession.
@@ -44,7 +45,8 @@ class PlaybackService : MediaSessionService() {
     private val handler = Handler(Looper.getMainLooper())
     private var retryCount = 0
 
-    private val store get() = (application as AndroRadioApp).store
+    private val app get() = application as AndroRadioApp
+    private val store get() = app.store
 
     override fun onCreate() {
         super.onCreate()
@@ -137,8 +139,12 @@ class PlaybackService : MediaSessionService() {
             retryCount = 0
             handler.removeCallbacksAndMessages(null)
             // Changement par ⏮ ⏭ (notification, casque, voiture) : la station rejoint l'historique.
+            // Radio Browser demande de signaler chaque écoute lancée (compteur de clics).
             if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_SEEK) {
-                Station.fromMetadata(mediaItem?.mediaMetadata)?.let(store::addRecent)
+                Station.fromMetadata(mediaItem?.mediaMetadata)?.let { station ->
+                    store.addRecent(station)
+                    serviceScope.launch { app.api.registerClick(station.uuid) }
+                }
             }
         }
 
@@ -216,6 +222,7 @@ class PlaybackService : MediaSessionService() {
             store.awaitLoaded()
             val last = store.recent.value.firstOrNull()
                 ?: throw UnsupportedOperationException("No station played yet")
+            serviceScope.launch { app.api.registerClick(last.uuid) }
             playlistAround(last)
         }
     }

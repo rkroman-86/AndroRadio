@@ -166,6 +166,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun moveFavorite(from: Int, to: Int) = store.moveFavorite(from, to)
 
+    private val _aboutOpen = MutableStateFlow(false)
+    val aboutOpen = _aboutOpen.asStateFlow()
+
+    fun openAbout() {
+        _aboutOpen.value = true
+    }
+
+    fun closeAbout() {
+        _aboutOpen.value = false
+    }
+
     fun openSearch() {
         _searchOpen.value = true
     }

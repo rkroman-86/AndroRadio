@@ -1,0 +1,1 @@
+Première version : lecteur sur un seul écran, 20 favoris réordonnables, stations locales, recherche multi-critères, pochettes, français / anglais / russe.
