@@ -71,56 +71,26 @@ fun HomeScreen(vm: MainViewModel) {
     val currentUuid = player.station?.uuid
     val openFavoritesFor: (Station) -> Unit = { vm.openFavorites(it) }
 
-    Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-        ) {
-            // Hauteurs relatives : en cours 1,25 · trois bandes de stations 1 · contrôles 0,5
-            val band = Modifier.weight(1f)
-            val track by vm.track.collectAsStateWithLifecycle()
-            val trackArt by vm.trackArt.collectAsStateWithLifecycle()
+    val track by vm.track.collectAsStateWithLifecycle()
+    val trackArt by vm.trackArt.collectAsStateWithLifecycle()
 
-            NowPlayingBand(current, player, track, trackArt, vm::openAbout, Modifier.weight(1.25f))
-
-            StationBand(
-                title = stringResource(R.string.band_recent),
-                slots = recent,
-                currentUuid = currentUuid,
-                isActive = player.isActive,
-                emptyMessage = stringResource(R.string.recent_empty),
-                onPlay = vm::play,
-                onLongPress = openFavoritesFor,
-                modifier = band,
-            )
-
-            StationBand(
-                title = stringResource(R.string.band_favorites),
-                slots = favorites,
-                currentUuid = currentUuid,
-                isActive = player.isActive,
-                emptyMessage = "",
-                onPlay = vm::play,
-                onLongPress = openFavoritesFor,
-                numbered = true,
-                modifier = band,
-            )
-
-            LocalBand(vm, local, currentUuid, player.isActive, openFavoritesFor, band)
-
-            ControlsBand(
-                isActive = player.isActive,
-                canPlay = current != null,
-                onPlayStop = vm::togglePlayStop,
-                onFavorites = { vm.openFavorites() },
-                onSearch = vm::openSearch,
-                modifier = Modifier.weight(0.5f),
-            )
-        }
-    }
+    HomeBands(
+        current = current,
+        player = player,
+        track = track,
+        trackArt = trackArt,
+        recent = recent,
+        favorites = favorites,
+        local = local,
+        countryName = vm.countryName,
+        onPlay = vm::play,
+        onLongPress = openFavoritesFor,
+        onRefreshLocal = vm::refreshLocal,
+        onPlayStop = vm::togglePlayStop,
+        onFavorites = { vm.openFavorites() },
+        onSearch = vm::openSearch,
+        onAbout = vm::openAbout,
+    )
 
     favoritesSheet?.let { sheet ->
         FavoritesPage(
@@ -157,6 +127,79 @@ fun HomeScreen(vm: MainViewModel) {
             onAddFavorite = openFavoritesFor,
             onClose = vm::closeSearch,
         )
+    }
+}
+
+/**
+ * Les 5 bandes de l'écran principal, sans état : tout arrive en paramètres.
+ * Utilisé par l'appli (via [HomeScreen]) et par les captures d'écran générées.
+ */
+@Composable
+fun HomeBands(
+    current: Station?,
+    player: PlayerUiState,
+    track: Track?,
+    trackArt: String?,
+    recent: List<Station>,
+    favorites: List<Station?>,
+    local: LoadState,
+    countryName: String,
+    onPlay: (Station) -> Unit,
+    onLongPress: (Station) -> Unit,
+    onRefreshLocal: () -> Unit,
+    onPlayStop: () -> Unit,
+    onFavorites: () -> Unit,
+    onSearch: () -> Unit,
+    onAbout: () -> Unit,
+) {
+    val currentUuid = player.station?.uuid
+    Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+        ) {
+            // Hauteurs relatives : en cours 1,25 · trois bandes de stations 1 · contrôles 0,5
+            val band = Modifier.weight(1f)
+
+            NowPlayingBand(current, player, track, trackArt, onAbout, Modifier.weight(1.25f))
+
+            StationBand(
+                title = stringResource(R.string.band_recent),
+                slots = recent,
+                currentUuid = currentUuid,
+                isActive = player.isActive,
+                emptyMessage = stringResource(R.string.recent_empty),
+                onPlay = onPlay,
+                onLongPress = onLongPress,
+                modifier = band,
+            )
+
+            StationBand(
+                title = stringResource(R.string.band_favorites),
+                slots = favorites,
+                currentUuid = currentUuid,
+                isActive = player.isActive,
+                emptyMessage = "",
+                onPlay = onPlay,
+                onLongPress = onLongPress,
+                numbered = true,
+                modifier = band,
+            )
+
+            LocalBand(countryName, local, currentUuid, player.isActive, onPlay, onLongPress, onRefreshLocal, band)
+
+            ControlsBand(
+                isActive = player.isActive,
+                canPlay = current != null,
+                onPlayStop = onPlayStop,
+                onFavorites = onFavorites,
+                onSearch = onSearch,
+                modifier = Modifier.weight(0.5f),
+            )
+        }
     }
 }
 
@@ -260,18 +303,20 @@ private fun NowPlayingBand(
 
 @Composable
 private fun LocalBand(
-    vm: MainViewModel,
+    countryName: String,
     state: LoadState,
     currentUuid: String?,
     isActive: Boolean,
+    onPlay: (Station) -> Unit,
     onLongPress: (Station) -> Unit,
+    onRefresh: () -> Unit,
     modifier: Modifier,
 ) {
-    val title = if (vm.countryName.isNotEmpty()) stringResource(R.string.band_local, vm.countryName)
+    val title = if (countryName.isNotEmpty()) stringResource(R.string.band_local, countryName)
     else stringResource(R.string.band_popular)
     val refresh: @Composable () -> Unit = {
         IconButton(
-            onClick = vm::refreshLocal,
+            onClick = onRefresh,
             enabled = state !is LoadState.Loading,
             modifier = Modifier.size(28.dp),
         ) {
@@ -290,7 +335,7 @@ private fun LocalBand(
             currentUuid = currentUuid,
             isActive = isActive,
             emptyMessage = stringResource(R.string.no_results),
-            onPlay = vm::play,
+            onPlay = onPlay,
             onLongPress = onLongPress,
             trailing = refresh,
             modifier = modifier,

@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.roborazzi)
 }
 
 // Signature release : fournie par variables d'environnement (GitHub Secrets) ou keystore.properties local.
@@ -64,6 +65,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    testOptions {
+        // Captures d'écran Google Play générées par des tests Robolectric + Roborazzi
+        unitTests.isIncludeAndroidResources = true
+    }
+
     lint {
         // Les avertissements lint ne bloquent pas la compilation release (CI).
         abortOnError = false
@@ -103,4 +109,14 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.guava)
     implementation(libs.coil.compose)
+
+    // Captures d'écran pour Google Play (tests uniquement, absents de l'APK)
+    testImplementation(libs.junit)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

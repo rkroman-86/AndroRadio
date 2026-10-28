@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.LocaleList
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -39,6 +40,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,9 +59,25 @@ import coil.compose.AsyncImagePainter
 import com.plugyourhome.androradio.R
 import com.plugyourhome.androradio.data.Station
 
+/**
+ * Images fournies directement, sans réseau (captures d'écran générées pour Google Play).
+ * Dans l'appli, toujours null : les images viennent d'internet via Coil.
+ */
+val LocalArtOverride = staticCompositionLocalOf<((String) -> Painter?)?> { null }
+
 /** Pochette de la station (son logo) ; icône radio tant qu'elle n'est pas chargée ou si elle manque. */
 @Composable
 fun StationArt(url: String?, modifier: Modifier = Modifier, corner: Dp = 12.dp) {
+    val override = url?.let { LocalArtOverride.current?.invoke(it) }
+    if (override != null) {
+        Image(
+            painter = override,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = modifier.clip(RoundedCornerShape(corner)),
+        )
+        return
+    }
     var loaded by remember(url) { mutableStateOf(false) }
     Box(
         modifier = modifier
