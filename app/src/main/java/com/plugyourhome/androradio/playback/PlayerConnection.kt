@@ -93,8 +93,15 @@ class PlayerConnection(context: Context, scope: CoroutineScope) {
     private fun publish(player: Player) {
         val metadata: MediaMetadata = player.mediaMetadata
         val station = Station.fromMetadata(player.currentMediaItem?.mediaMetadata)
-        val title = metadata.title?.toString()?.trim()
-            ?.takeIf { it.isNotBlank() && it != "-" && it != station?.displayName }
+        val name = station?.displayName
+        fun clean(v: CharSequence?) = v?.toString()?.trim()?.takeIf { it.isNotBlank() && it != "-" && it != name }
+        val songTitle = clean(metadata.title)
+        val songArtist = clean(metadata.artist)
+        // ICY donne « Artiste - Titre » dans le titre ; les flux HLS (ID3) donnent les deux séparément.
+        val title = when {
+            songTitle != null && songArtist != null -> "$songArtist - $songTitle"
+            else -> songTitle
+        }
         _state.value = PlayerUiState(
             station = station,
             nowPlaying = title,

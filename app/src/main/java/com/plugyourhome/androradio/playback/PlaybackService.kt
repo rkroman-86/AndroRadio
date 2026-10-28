@@ -7,6 +7,8 @@ import android.os.Looper
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.ForwardingPlayer
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -73,7 +75,7 @@ class PlaybackService : MediaSessionService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
-        mediaSession = MediaSession.Builder(this, player)
+        mediaSession = MediaSession.Builder(this, NowPlayingPlayer(player))
             .setSessionActivity(openApp)
             .setCallback(SessionCallback())
             .build()
@@ -97,6 +99,21 @@ class PlaybackService : MediaSessionService() {
         }
         mediaSession = null
         super.onDestroy()
+    }
+
+    /**
+     * Métadonnées présentées à la notification et à l'appli : le morceau en cours en titre,
+     * le nom de la station en artiste. Sans morceau connu, le nom de la station en titre.
+     */
+    private class NowPlayingPlayer(player: Player) : ForwardingPlayer(player) {
+        override fun getMediaMetadata(): MediaMetadata {
+            val metadata = super.getMediaMetadata()
+            val station = currentMediaItem?.mediaMetadata?.station ?: metadata.station ?: return metadata
+            val builder = metadata.buildUpon()
+            if (metadata.title.isNullOrBlank()) builder.setTitle(station)
+            if (metadata.artist.isNullOrBlank()) builder.setArtist(station)
+            return builder.build()
+        }
     }
 
     /** Reconnexion automatique (3 essais) quand un flux décroche. */

@@ -61,8 +61,8 @@ data class Station(
     fun toMediaItem(): MediaItem {
         val extras = Bundle().apply { putString(EXTRA_STATION_JSON, AppJson.encodeToString(this@Station)) }
         val metadata = MediaMetadata.Builder()
-            .setTitle(displayName)
-            .setArtist(displayName)
+            // Titre et artiste laissés vides exprès : ExoPlayer y place le morceau en cours
+            // (ICY ou ID3). Un titre fixé ici masquerait ces métadonnées.
             .setStation(displayName)
             .setGenre(tagList.firstOrNull())
             .setArtworkUri(favicon.takeIf { it.isNotBlank() }?.let(Uri::parse))
