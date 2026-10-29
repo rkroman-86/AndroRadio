@@ -28,7 +28,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Radio
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -274,7 +276,7 @@ fun StationTile(
  * Android 13+ : changement immédiat. Avant : l'appli suit la langue du système (option grisée).
  */
 @Composable
-fun SettingsMenu(modifier: Modifier = Modifier) {
+fun SettingsMenu(onAbout: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var open by remember { mutableStateOf(false) }
     val canChoose = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
@@ -310,6 +312,16 @@ fun SettingsMenu(modifier: Modifier = Modifier) {
                     },
                 )
             }
+            // Tout en bas du menu : informations sur l'appli
+            HorizontalDivider(Modifier.padding(vertical = 4.dp))
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.about)) },
+                leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) },
+                onClick = {
+                    open = false
+                    onAbout()
+                },
+            )
         }
     }
 }

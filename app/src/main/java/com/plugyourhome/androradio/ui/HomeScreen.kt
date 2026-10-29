@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -301,16 +300,15 @@ private fun NowPlayingBand(
                     modifier = Modifier.fillMaxWidth().basicMarquee(),
                 )
             }
-            // Colonne de droite : réglages en haut, favoris, recherche, infos tout en bas
+            // Colonne de droite : réglages (langue + infos) en haut, favoris, recherche en bas
             Column(
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxHeight(),
             ) {
-                SettingsMenu()
+                SettingsMenu(onAbout = onAbout)
                 SideIcon(Icons.Filled.Favorite, stringResource(R.string.band_favorites), onFavorites)
                 SideIcon(Icons.Filled.Search, stringResource(R.string.search), onSearch)
-                SideIcon(Icons.Outlined.Info, stringResource(R.string.about), onAbout)
             }
         }
     }
