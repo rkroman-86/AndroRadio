@@ -8,6 +8,7 @@ import com.plugyourhome.androradio.AndroRadioApp
 import com.plugyourhome.androradio.data.Station
 import com.plugyourhome.androradio.data.Track
 import com.plugyourhome.androradio.playback.PlayerConnection
+import com.plugyourhome.androradio.playback.VolumeControl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -39,6 +40,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val store = app.store
 
     val player = PlayerConnection(application, viewModelScope)
+
+    /** Volume multimédia du téléphone (0..1), réglé depuis la bande du bas. */
+    val volume = VolumeControl(application)
 
     /** Code pays de l'appareil (ex. « FR »), vide si inconnu. */
     // Région du système (et non de l'appli) : choisir une autre langue dans l'appli
@@ -198,6 +202,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     override fun onCleared() {
         player.release()
+        volume.release()
     }
 
     companion object {

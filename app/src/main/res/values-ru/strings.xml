@@ -47,4 +47,5 @@
     <string name="about_opensource_text">Создано с AndroidX Media3, Jetpack Compose, OkHttp, Coil и kotlinx.serialization (лицензия Apache 2.0).</string>
     <string name="about_source_code">Исходный код</string>
     <string name="settings">Настройки</string>
+    <string name="volume">Громкость</string>
 </resources>

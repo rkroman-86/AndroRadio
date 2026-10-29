@@ -27,7 +27,14 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.automirrored.filled.VolumeDown
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.Button
+import androidx.compose.material3.Slider
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
@@ -73,6 +80,7 @@ fun HomeScreen(vm: MainViewModel) {
 
     val track by vm.track.collectAsStateWithLifecycle()
     val trackArt by vm.trackArt.collectAsStateWithLifecycle()
+    val volume by vm.volume.level.collectAsStateWithLifecycle()
 
     HomeBands(
         current = current,
@@ -90,6 +98,8 @@ fun HomeScreen(vm: MainViewModel) {
         onFavorites = { vm.openFavorites() },
         onSearch = vm::openSearch,
         onAbout = vm::openAbout,
+        volume = volume,
+        onVolumeChange = vm.volume::set,
     )
 
     favoritesSheet?.let { sheet ->
@@ -152,6 +162,8 @@ fun HomeBands(
     onFavorites: () -> Unit,
     onSearch: () -> Unit,
     onAbout: () -> Unit,
+    volume: Float = 0.6f,
+    onVolumeChange: (Float) -> Unit = {},
 ) {
     val currentUuid = player.station?.uuid
     Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
@@ -196,8 +208,8 @@ fun HomeBands(
                 isActive = player.isActive,
                 canPlay = current != null,
                 onPlayStop = onPlayStop,
-                onFavorites = onFavorites,
-                onSearch = onSearch,
+                volume = volume,
+                onVolumeChange = onVolumeChange,
                 modifier = Modifier.weight(0.5f),
             )
         }
@@ -365,70 +377,55 @@ private fun LocalBand(
     }
 }
 
-/** Dernière bande (demi-hauteur) : Lecture/Stop (un seul bouton), Favoris, Recherche. */
+/** Dernière bande (demi-hauteur) : bouton Lecture/Stop carré arrondi, puis réglage du volume. */
 @Composable
 private fun ControlsBand(
     isActive: Boolean,
     canPlay: Boolean,
     onPlayStop: () -> Unit,
-    onFavorites: () -> Unit,
-    onSearch: () -> Unit,
+    volume: Float,
+    onVolumeChange: (Float) -> Unit,
     modifier: Modifier,
 ) {
     Band(modifier) {
-        BoxWithConstraints(Modifier.fillMaxSize()) {
-            val iconSize = (maxHeight * 0.45f).coerceIn(18.dp, 30.dp)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
-                ControlButton(
-                    icon = if (isActive) Icons.Filled.Stop else Icons.Filled.PlayArrow,
-                    label = stringResource(if (isActive) R.string.stop else R.string.play),
-                    iconSize = iconSize,
-                    primary = true,
-                    enabled = canPlay || isActive,
-                    onClick = onPlayStop,
-                )
-                ControlButton(
-                    icon = Icons.Filled.Favorite,
-                    label = stringResource(R.string.band_favorites),
-                    iconSize = iconSize,
-                    onClick = onFavorites,
-                )
-                ControlButton(
-                    icon = Icons.Filled.Search,
-                    label = stringResource(R.string.search),
-                    iconSize = iconSize,
-                    onClick = onSearch,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            // Carré arrondi : toute la hauteur de la bande
+            Button(
+                onClick = onPlayStop,
+                enabled = canPlay || isActive,
+                shape = RoundedCornerShape(16.dp),
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.fillMaxHeight().aspectRatio(1f),
+            ) {
+                Icon(
+                    if (isActive) Icons.Filled.Stop else Icons.Filled.PlayArrow,
+                    contentDescription = stringResource(if (isActive) R.string.stop else R.string.play),
+                    modifier = Modifier.fillMaxSize(0.6f),
                 )
             }
+            Icon(
+                when {
+                    volume <= 0f -> Icons.AutoMirrored.Filled.VolumeOff
+                    volume < 0.5f -> Icons.AutoMirrored.Filled.VolumeDown
+                    else -> Icons.AutoMirrored.Filled.VolumeUp
+                },
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp).clickable { onVolumeChange(if (volume > 0f) 0f else 0.5f) },
+            )
+            val volumeLabel = stringResource(R.string.volume)
+            Slider(
+                value = volume,
+                onValueChange = onVolumeChange,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp)
+                    .semantics { contentDescription = volumeLabel },
+            )
         }
-    }
-}
-
-@Composable
-private fun RowScope.ControlButton(
-    icon: ImageVector,
-    label: String,
-    iconSize: Dp,
-    onClick: () -> Unit,
-    primary: Boolean = false,
-    enabled: Boolean = true,
-) {
-    val content: @Composable RowScope.() -> Unit = {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(iconSize))
-        Spacer(Modifier.width(6.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.labelLarge,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-    val modifier = Modifier.weight(1f).fillMaxHeight()
-    val shape = RoundedCornerShape(14.dp)
-    val padding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-    if (primary) {
-        Button(onClick = onClick, enabled = enabled, shape = shape, contentPadding = padding, modifier = modifier, content = content)
-    } else {
-        FilledTonalButton(onClick = onClick, enabled = enabled, shape = shape, contentPadding = padding, modifier = modifier, content = content)
     }
 }
