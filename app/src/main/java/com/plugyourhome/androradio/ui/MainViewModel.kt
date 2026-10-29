@@ -1,6 +1,7 @@
 package com.plugyourhome.androradio.ui
 
 import android.app.Application
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.plugyourhome.androradio.AndroRadioApp
@@ -83,6 +84,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val search = _search.asStateFlow()
     private var searchJob: Job? = null
 
+    /**
+     * Position de défilement des résultats de recherche, gardée ici (et non dans la page)
+     * pour retrouver le même endroit quand on ferme puis rouvre la recherche.
+     */
+    val searchListState = LazyListState()
+
     /** Page flottante des favoris : null = fermée ; sinon la station à enregistrer (peut être absente). */
     private val _favoritesSheet = MutableStateFlow<FavoritesSheet?>(null)
     val favoritesSheet = _favoritesSheet.asStateFlow()
@@ -130,6 +137,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         searchJob = viewModelScope.launch {
             _search.value = LoadState.Loading
             _search.value = load { api.searchEverywhere(q) }
+            searchListState.requestScrollToItem(0) // nouvelle recherche : on repart du haut
         }
     }
 

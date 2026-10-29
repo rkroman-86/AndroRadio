@@ -26,7 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -269,45 +269,70 @@ fun StationTile(
     }
 }
 
-/** Choix de la langue de l'appli (Android 13+ ; avant, l'appli suit la langue du système). */
+/**
+ * Pignon « Réglages » : ouvre le choix de la langue de l'appli.
+ * Android 13+ : changement immédiat. Avant : l'appli suit la langue du système (option grisée).
+ */
 @Composable
-fun LanguageMenu() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) LanguageMenuApi33()
-}
-
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
-@Composable
-private fun LanguageMenuApi33() {
+fun SettingsMenu(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var open by remember { mutableStateOf(false) }
+    val canChoose = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
     val options = listOf(
         null to stringResource(R.string.language_system),
         "en" to "English",
         "fr" to "Français",
         "ru" to "Русский",
     )
-    Box {
-        IconButton(onClick = { open = true }, modifier = Modifier.size(36.dp)) {
+    Box(modifier) {
+        IconButton(onClick = { open = true }, modifier = Modifier.size(SIDE_ICON)) {
             Icon(
-                Icons.Filled.Language,
-                contentDescription = stringResource(R.string.language),
+                Icons.Filled.Settings,
+                contentDescription = stringResource(R.string.settings),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(22.dp),
             )
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            Text(
+                stringResource(R.string.language),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
             options.forEach { (tag, label) ->
                 DropdownMenuItem(
                     text = { Text(label) },
+                    enabled = canChoose || tag == null,
                     onClick = {
                         open = false
-                        context.getSystemService(LocaleManager::class.java).applicationLocales =
-                            if (tag == null) LocaleList.getEmptyLocaleList() else LocaleList.forLanguageTags(tag)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) setAppLanguage(context, tag)
                     },
                 )
             }
         }
     }
 }
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun setAppLanguage(context: android.content.Context, tag: String?) {
+    context.getSystemService(LocaleManager::class.java).applicationLocales =
+        if (tag == null) LocaleList.getEmptyLocaleList() else LocaleList.forLanguageTags(tag)
+}
+
+/** Petite icône de la colonne de droite (bande « En cours »). */
+@Composable
+fun SideIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    IconButton(onClick = onClick, modifier = Modifier.size(SIDE_ICON)) {
+        Icon(
+            icon,
+            contentDescription = label,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(22.dp),
+        )
+    }
+}
+
+val SIDE_ICON = 40.dp
 
 const val VISIBLE_TILES = 4

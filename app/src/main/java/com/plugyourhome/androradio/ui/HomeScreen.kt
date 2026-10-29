@@ -126,6 +126,7 @@ fun HomeScreen(vm: MainViewModel) {
             },
             onAddFavorite = openFavoritesFor,
             onClose = vm::closeSearch,
+            listState = vm.searchListState,
         )
     }
 }
@@ -164,7 +165,7 @@ fun HomeBands(
             // Hauteurs relatives : en cours 1,25 · trois bandes de stations 1 · contrôles 0,5
             val band = Modifier.weight(1f)
 
-            NowPlayingBand(current, player, track, trackArt, onAbout, Modifier.weight(1.25f))
+            NowPlayingBand(current, player, track, trackArt, onFavorites, onSearch, onAbout, Modifier.weight(1.25f))
 
             StationBand(
                 title = stringResource(R.string.band_recent),
@@ -210,12 +211,14 @@ private fun NowPlayingBand(
     player: PlayerUiState,
     track: Track?,
     trackArt: String?,
+    onFavorites: () -> Unit,
+    onSearch: () -> Unit,
     onAbout: () -> Unit,
     modifier: Modifier,
 ) {
     Band(modifier) {
-        Box(Modifier.fillMaxSize()) {
-            Column(Modifier.fillMaxSize()) {
+        Row(Modifier.fillMaxSize()) {
+            Column(Modifier.weight(1f).fillMaxHeight()) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f).fillMaxWidth()) {
                     // Pochette du morceau si trouvée, sinon logo de la station
                     Crossfade(
@@ -226,7 +229,7 @@ private fun NowPlayingBand(
                         StationArt(url, Modifier.fillMaxSize(), corner = 14.dp)
                     }
                     Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f).padding(end = 34.dp)) {
+                    Column(Modifier.weight(1f).padding(end = 4.dp)) {
                         Text(
                             stringResource(R.string.band_now_playing),
                             style = MaterialTheme.typography.labelMedium,
@@ -286,16 +289,16 @@ private fun NowPlayingBand(
                     modifier = Modifier.fillMaxWidth().basicMarquee(),
                 )
             }
-            Column(Modifier.align(Alignment.TopEnd)) {
-                LanguageMenu()
-                IconButton(onClick = onAbout, modifier = Modifier.size(36.dp)) {
-                    Icon(
-                        Icons.Outlined.Info,
-                        contentDescription = stringResource(R.string.about),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
+            // Colonne de droite : réglages en haut, favoris, recherche, infos tout en bas
+            Column(
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxHeight(),
+            ) {
+                SettingsMenu()
+                SideIcon(Icons.Filled.Favorite, stringResource(R.string.band_favorites), onFavorites)
+                SideIcon(Icons.Filled.Search, stringResource(R.string.search), onSearch)
+                SideIcon(Icons.Outlined.Info, stringResource(R.string.about), onAbout)
             }
         }
     }

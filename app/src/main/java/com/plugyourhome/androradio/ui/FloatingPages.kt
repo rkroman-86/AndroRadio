@@ -2,6 +2,7 @@ package com.plugyourhome.androradio.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.graphicsLayer
@@ -235,6 +236,7 @@ fun SearchPage(
     onPlay: (Station) -> Unit,
     onAddFavorite: (Station) -> Unit,
     onClose: () -> Unit,
+    listState: LazyListState = rememberLazyListState(),
 ) {
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
@@ -290,6 +292,7 @@ fun SearchPage(
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
                         )
                         LazyColumn(
+                            state = listState, // conservé par le ViewModel : même position à la réouverture
                             contentPadding = PaddingValues(bottom = 12.dp),
                             verticalArrangement = Arrangement.spacedBy(2.dp),
                             modifier = Modifier.fillMaxSize(),
