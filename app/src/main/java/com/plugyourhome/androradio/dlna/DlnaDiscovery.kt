@@ -82,7 +82,7 @@ class DlnaDiscovery(private val context: Context, private val client: OkHttpClie
     }
 
     /** Lit la description de l'appareil ; null si ce n'est pas un lecteur (pas d'AVTransport). */
-    private fun describe(location: String): DlnaDevice? {
+    internal fun describe(location: String): DlnaDevice? {
         val base = location.toHttpUrlOrNull() ?: return null
         val xml = client.newCall(Request.Builder().url(base).build()).execute().use {
             if (!it.isSuccessful) return null

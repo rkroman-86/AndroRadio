@@ -28,6 +28,11 @@ jobs:
           set -o pipefail
           ./gradlew --no-daemon --console=plain assembleDebug 2>&1 | tee build.log
 
+      - name: Unit tests (DLNA…)
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon --console=plain testDebugUnitTest --tests 'com.plugyourhome.androradio.dlna.*' 2>&1 | tee -a build.log
+
       # Vérifie que la version Play (minifiée par R8) se construit, même sans clé de signature.
       - name: Check release build (R8)
         run: |
