@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.plugyourhome.androradio.AndroRadioApp
 import com.plugyourhome.androradio.data.Station
 import com.plugyourhome.androradio.data.Track
+import com.plugyourhome.androradio.cast.CastDevice
+import com.plugyourhome.androradio.cast.CastDevices
 import com.plugyourhome.androradio.dlna.DlnaDevice
 import com.plugyourhome.androradio.dlna.RemoteOutput
 import com.plugyourhome.androradio.dlna.RemoteTransport
@@ -63,13 +65,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, PlayerUiState())
 
+    /** Appareils Google Cast (Chromecast, Google TV…). */
+    val cast = CastDevices(application)
+
+    /** Nom de l'appareil qui joue (DLNA ou Cast), null si c'est le téléphone. */
+    val outputName: StateFlow<String?> = combine(remote.state, cast.connected, player.state) { r, c, p ->
+        r.device?.name ?: c?.takeIf { p.isCasting || cast.isConnected }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     /** Volume du curseur : celui de l'appareil distant pendant une diffusion. */
-    val volumeLevel: StateFlow<Float> = combine(volume.level, remote.state) { v, r ->
-        if (r.isActive) r.volume ?: 0.5f else v
+    val volumeLevel: StateFlow<Float> = combine(volume.level, remote.state, player.state) { v, r, p ->
+        when {
+            r.isActive -> r.volume ?: 0.5f
+            p.isCasting -> p.castVolume ?: 0.5f
+            else -> v
+        }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, volume.level.value)
 
     fun setVolume(value: Float) {
-        if (remote.state.value.isActive) remote.setVolume(value) else volume.set(value)
+        when {
+            remote.state.value.isActive -> remote.setVolume(value)
+            player.state.value.isCasting -> player.setCastVolume(value)
+            else -> volume.set(value)
+        }
     }
 
     /**
@@ -91,30 +109,66 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _castOpen = MutableStateFlow(false)
     val castOpen = _castOpen.asStateFlow()
 
+    /** Liste « Diffuser vers… » : appareils Cast puis DLNA (un même appareil peut apparaître deux fois). */
+    val outputs: StateFlow<OutputList> = combine(cast.devices, remote.search) { c, d ->
+        OutputList(
+            searching = d.searching,
+            targets = c.map { OutputTarget("cast:" + it.id, it.name, OutputKind.CAST) } +
+                d.devices.map { OutputTarget("dlna:" + it.id, it.name, OutputKind.DLNA) },
+        )
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, OutputList())
+
+    /** Identifiant de la cible active dans la liste, null = ce téléphone. */
+    val currentOutputId: StateFlow<String?> = combine(remote.state, cast.connected, cast.devices) { r, c, list ->
+        r.device?.let { "dlna:" + it.id } ?: c?.let { name -> list.firstOrNull { it.name == name }?.let { "cast:" + it.id } }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     fun openCast() {
         _castOpen.value = true
         remote.startSearch()
+        cast.startDiscovery()
     }
 
     fun closeCast() {
         _castOpen.value = false
+        cast.stopDiscovery()
     }
 
-    /** Envoie la station en cours (ou la dernière écoutée) vers l'appareil choisi. */
-    fun castTo(device: DlnaDevice) {
+    fun castTo(target: OutputTarget) {
+        when (target.kind) {
+            OutputKind.DLNA -> remote.search.value.devices
+                .firstOrNull { "dlna:" + it.id == target.id }?.let(::castToDlna)
+            OutputKind.CAST -> cast.devices.value
+                .firstOrNull { "cast:" + it.id == target.id }?.let(::castToCast)
+        }
+        closeCast()
+    }
+
+    /** DLNA : la station en cours (ou la dernière écoutée) part vers l'appareil choisi. */
+    private fun castToDlna(device: DlnaDevice) {
         val station = currentStation.value
+        if (cast.isConnected) cast.disconnect()
         player.stop()
         remote.connect(device, station)
         station?.let { s -> viewModelScope.launch { api.registerClick(s.uuid) } }
-        _castOpen.value = false
     }
 
-    /** Revient sur le téléphone ; reprend la station ici si elle jouait sur l'appareil. */
+    /** Google Cast : CastPlayer reprend sur l'appareil ce que joue le téléphone. */
+    private fun castToCast(device: CastDevice) {
+        val fromDlna = remote.disconnect()
+        val station = fromDlna ?: currentStation.value
+        // Le téléphone doit jouer la station pour qu'elle soit transférée à l'appareil Cast.
+        if (station != null && (fromDlna != null || !player.state.value.isActive)) play(station)
+        cast.select(device)
+    }
+
+    /** Revient sur le téléphone ; la station reprend ici si elle jouait ailleurs. */
     fun castToPhone() {
+        if (cast.isConnected) cast.disconnect() // CastPlayer repasse sur le lecteur local
         val wasPlaying = playerState.value.isActive
         val station = remote.disconnect()
         if (wasPlaying && station != null) player.play(station)
-        _castOpen.value = false
+        closeCast()
     }
 
     /** Code pays de l'appareil (ex. « FR »), vide si inconnu. */
@@ -278,6 +332,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     override fun onCleared() {
+        cast.release()
         player.release()
         volume.release()
     }
@@ -291,3 +346,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 }
 
 data class FavoritesSheet(val stationToSave: Station?)
+
+enum class OutputKind { CAST, DLNA }
+
+/** Un appareil de la liste « Diffuser vers… ». */
+data class OutputTarget(val id: String, val name: String, val kind: OutputKind)
+
+data class OutputList(val searching: Boolean = false, val targets: List<OutputTarget> = emptyList())

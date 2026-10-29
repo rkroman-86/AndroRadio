@@ -69,7 +69,7 @@ import com.plugyourhome.androradio.playback.PlayerUiState
 @Composable
 fun HomeScreen(vm: MainViewModel) {
     val player by vm.playerState.collectAsStateWithLifecycle()
-    val remote by vm.remote.state.collectAsStateWithLifecycle()
+    val outputName by vm.outputName.collectAsStateWithLifecycle()
     val current by vm.currentStation.collectAsStateWithLifecycle()
     val recent by vm.recent.collectAsStateWithLifecycle()
     val favorites by vm.favorites.collectAsStateWithLifecycle()
@@ -102,19 +102,20 @@ fun HomeScreen(vm: MainViewModel) {
         onAbout = vm::openAbout,
         volume = volume,
         onVolumeChange = vm::setVolume,
-        castName = remote.device?.name,
+        castName = outputName,
         onCast = vm::openCast,
     )
 
     val castOpen by vm.castOpen.collectAsStateWithLifecycle()
     if (castOpen) {
-        val devices by vm.remote.search.collectAsStateWithLifecycle()
+        val outputs by vm.outputs.collectAsStateWithLifecycle()
+        val currentId by vm.currentOutputId.collectAsStateWithLifecycle()
         CastPage(
-            search = devices,
-            current = remote.device,
+            outputs = outputs,
+            currentId = currentId,
             onPhone = vm::castToPhone,
             onDevice = vm::castTo,
-            onRefresh = vm.remote::startSearch,
+            onRefresh = vm::openCast,
             onClose = vm::closeCast,
         )
     }

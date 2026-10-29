@@ -21,6 +21,7 @@ To work, the app connects directly to these services:
 |---|---|---|
 | [Radio Browser](https://www.radio-browser.info) (station directory) | The words you type in search; the country code of your device to suggest local stations; the identifier of a station when you start playing it (anonymous listening counter used by the directory) | To find stations |
 | [MusicBrainz](https://musicbrainz.org) and [Cover Art Archive](https://coverartarchive.org), then [Apple iTunes Search API](https://performance-partners.apple.com/search-api) if nothing is found | The artist and title of the song currently broadcast by the station | To display the album cover |
+| A Google Cast device you choose (Chromecast, Google TV) and Google's Cast service | The station's stream address, name and logo; the Cast SDK also sends Google anonymised usage statistics about casting (no personal identifiers) | To play the station on that device |
 | A device you choose on your local network (DLNA: amplifier, speaker, TV) | The station's stream address and name, playback and volume commands | To play the station on that device |
 | The radio station's own server | A request for the audio stream | To play the station |
 
@@ -53,6 +54,7 @@ Pour fonctionner, l'appli se connecte directement à ces services :
 |---|---|---|
 | [Radio Browser](https://www.radio-browser.info) (annuaire de stations) | Les mots tapés dans la recherche ; le code pays de l'appareil pour proposer des stations locales ; l'identifiant d'une station quand vous la lancez (compteur d'écoutes anonyme de l'annuaire) | Trouver des stations |
 | [MusicBrainz](https://musicbrainz.org) et [Cover Art Archive](https://coverartarchive.org), puis [API de recherche iTunes d'Apple](https://performance-partners.apple.com/search-api) si rien n'est trouvé | L'artiste et le titre du morceau diffusé par la station | Afficher la pochette d'album |
+| Un appareil Google Cast que vous choisissez (Chromecast, Google TV) et le service Cast de Google | L'adresse du flux, le nom et le logo de la station ; le SDK Cast envoie aussi à Google des statistiques d'usage anonymisées sur la diffusion (aucun identifiant personnel) | Lire la station sur cet appareil |
 | Un appareil que vous choisissez sur votre réseau local (DLNA : ampli, enceinte, TV) | L'adresse du flux et le nom de la station, les commandes de lecture et de volume | Lire la station sur cet appareil |
 | Le serveur de la station | Une demande du flux audio | Lire la station |
 
@@ -84,6 +86,7 @@ Toute modification de cette politique sera publiée sur cette page.
 |---|---|---|
 | [Radio Browser](https://www.radio-browser.info) (каталог станций) | Слова, введённые в поиск; код страны устройства для местных станций; идентификатор станции при запуске (анонимный счётчик прослушиваний каталога) | Поиск станций |
 | [MusicBrainz](https://musicbrainz.org) и [Cover Art Archive](https://coverartarchive.org), затем [поисковый API iTunes (Apple)](https://performance-partners.apple.com/search-api), если там ничего нет | Исполнитель и название песни, которую передаёт станция | Показ обложки альбома |
+| Выбранное вами устройство Google Cast (Chromecast, Google TV) и сервис Cast от Google | Адрес потока, название и логотип станции; SDK Cast также отправляет в Google обезличенную статистику использования трансляции (без личных идентификаторов) | Воспроизведение на этом устройстве |
 | Выбранное вами устройство в локальной сети (DLNA: усилитель, колонка, телевизор) | Адрес потока и название станции, команды воспроизведения и громкости | Воспроизведение на этом устройстве |
 | Сервер самой станции | Запрос аудиопотока | Воспроизведение |
 

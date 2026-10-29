@@ -2,6 +2,7 @@ package com.plugyourhome.androradio.playback
 
 import android.content.ComponentName
 import android.content.Context
+import androidx.media3.common.DeviceInfo
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.annotation.OptIn
@@ -23,6 +24,10 @@ data class PlayerUiState(
     val isPlaying: Boolean = false,
     val isBuffering: Boolean = false,
     val hasError: Boolean = false,
+    /** Lecture sur un appareil Google Cast (CastPlayer) plutôt que sur le téléphone. */
+    val isCasting: Boolean = false,
+    /** Volume de l'appareil Cast (0..1), si connu. */
+    val castVolume: Float? = null,
 ) {
     val isActive: Boolean get() = isPlaying || isBuffering
 }
@@ -84,6 +89,15 @@ class PlayerConnection(context: Context, scope: CoroutineScope) {
     /** Arrête le flux mais garde la station chargée (elle reste affichée comme station actuelle). */
     fun stop() = withController { this.stop() }
 
+    /** Volume de l'appareil Cast (0..1). */
+    fun setCastVolume(value: Float) = withController {
+        val info = deviceInfo
+        if (info.maxVolume > info.minVolume) {
+            val level = info.minVolume + Math.round(value.coerceIn(0f, 1f) * (info.maxVolume - info.minVolume))
+            setDeviceVolume(level, 0)
+        }
+    }
+
     fun release() {
         controller?.removeListener(listener)
         controller?.release()
@@ -106,6 +120,9 @@ class PlayerConnection(context: Context, scope: CoroutineScope) {
             station = station,
             nowPlaying = title,
             isPlaying = player.isPlaying,
+            isCasting = player.deviceInfo.playbackType == DeviceInfo.PLAYBACK_TYPE_REMOTE,
+            castVolume = player.deviceInfo.takeIf { it.playbackType == DeviceInfo.PLAYBACK_TYPE_REMOTE && it.maxVolume > it.minVolume }
+                ?.let { (player.deviceVolume - it.minVolume).toFloat() / (it.maxVolume - it.minVolume) },
             isBuffering = player.playWhenReady && player.playbackState == Player.STATE_BUFFERING,
             hasError = player.playerError != null,
         )

@@ -52,6 +52,6 @@
     <string name="cast_to">Play on…</string>
     <string name="this_phone">This phone</string>
     <string name="cast_searching">Looking for devices on your Wi-Fi…</string>
-    <string name="cast_none">No DLNA device found. Check that it is on and connected to the same Wi-Fi.</string>
-    <string name="cast_hint">DLNA devices on your Wi-Fi: amplifiers, speakers, TVs.</string>
+    <string name="cast_none">No device found. Check that it is on and connected to the same Wi-Fi.</string>
+    <string name="cast_hint">Devices on your Wi-Fi: Chromecast / Google TV (Cast) and DLNA amplifiers, speakers, TVs.</string>
 </resources>

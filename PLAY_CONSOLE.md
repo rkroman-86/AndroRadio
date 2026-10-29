@@ -115,3 +115,17 @@ Au passage à `targetSdk 37` (Android 17), il faudra déclarer et demander `ACCE
 (groupe « Appareils à proximité ») avant la recherche d'appareils — voir
 https://developer.android.com/privacy-and-security/local-network-permission
 
+## 9. Google Cast et « Sécurité des données »
+
+AndroRadio intègre le SDK Google Cast (`play-services-cast-framework`, via Media3 Cast).
+D'après Google ([Cast SDK — Data safety](https://developers.google.com/cast/docs/android_sender/data_disclosure)),
+ce SDK collecte des **statistiques anonymisées** sur la diffusion (découverte, sessions, infos appareil et SDK),
+envoyées à Google, chiffrées en transit, sans partage avec des tiers, sans possibilité de refus ni de suppression.
+
+À ajouter dans le formulaire, en plus de l'historique des recherches :
+- **Activité dans l'appli → Autres actions de l'utilisateur** : collectée (par le SDK Cast), non partagée,
+  finalités « Statistiques » et « Fonctionnalité de l'appli », collecte obligatoire, chiffrée en transit.
+- **Infos et performances de l'appli → Diagnostics** : collectée (par le SDK Cast), non partagée, finalité « Statistiques ».
+
+Récepteur utilisé : le récepteur par défaut de Google (`DefaultCastOptionsProvider`), aucune appli réceptrice à enregistrer.
+

@@ -8,6 +8,9 @@
 }
 -keep,includedescriptorclasses class com.plugyourhome.androradio.**$$serializer { *; }
 
+# Google Cast : fournisseur d'options désigné par son nom dans le manifeste
+-keep class androidx.media3.cast.DefaultCastOptionsProvider { *; }
+
 # OkHttp
 -dontwarn okhttp3.internal.platform.**
 -dontwarn org.conscrypt.**

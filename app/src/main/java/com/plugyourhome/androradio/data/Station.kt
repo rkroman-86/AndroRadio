@@ -41,6 +41,20 @@ data class Station(
 
     val streamUrl: String get() = urlResolved.ifBlank { url }.trim()
 
+    /** Type de flux, déduit du codec annoncé par Radio Browser. */
+    val mimeType: String
+        get() {
+            val c = codec.uppercase()
+            return when {
+                hls == 1 || streamUrl.substringBefore('?').endsWith(".m3u8", ignoreCase = true) -> MimeTypes.APPLICATION_M3U8
+                c.startsWith("AAC") -> "audio/aac" // type lisible par les récepteurs Cast
+                c == "OGG" || c == "VORBIS" -> "audio/ogg"
+                c == "OPUS" -> "audio/ogg"
+                c == "FLAC" -> "audio/flac"
+                else -> "audio/mpeg"
+            }
+        }
+
     val isPlayable: Boolean get() = name.isNotBlank() && streamUrl.startsWith("http", ignoreCase = true)
 
     val tagList: List<String>
@@ -72,11 +86,10 @@ data class Station(
             .setExtras(extras)
             .build()
         val uri = Uri.parse(streamUrl)
-        val isHls = hls == 1 || streamUrl.substringBefore('?').endsWith(".m3u8", ignoreCase = true)
         return MediaItem.Builder()
             .setMediaId(uuid)
             .setUri(uri)
-            .apply { if (isHls) setMimeType(MimeTypes.APPLICATION_M3U8) }
+            .setMimeType(mimeType) // indispensable pour la diffusion Google Cast
             .setMediaMetadata(metadata)
             .setRequestMetadata(MediaItem.RequestMetadata.Builder().setMediaUri(uri).build())
             .build()

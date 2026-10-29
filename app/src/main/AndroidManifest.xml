@@ -36,6 +36,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Google Cast : récepteur par défaut de Google (pas d'appli réceptrice à publier) -->
+        <meta-data
+            android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
+            android:value="androidx.media3.cast.DefaultCastOptionsProvider" />
+
+        <!-- Permet au panneau de sortie d'Android de basculer la lecture vers un appareil Cast -->
+        <receiver
+            android:name="androidx.mediarouter.media.MediaTransferReceiver"
+            android:exported="true"
+            tools:ignore="ExportedReceiver" />
+
         <service
             android:name=".playback.PlaybackService"
             android:exported="true"

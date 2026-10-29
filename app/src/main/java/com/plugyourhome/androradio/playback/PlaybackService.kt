@@ -6,7 +6,9 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
+import androidx.media3.cast.CastPlayer
 import androidx.media3.common.C
+import androidx.media3.common.DeviceInfo
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MediaItem
@@ -44,6 +46,7 @@ class PlaybackService : MediaSessionService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val handler = Handler(Looper.getMainLooper())
     private var retryCount = 0
+    private var localPlayer: ExoPlayer? = null
 
     private val app get() = application as AndroRadioApp
     private val store get() = app.store
@@ -69,7 +72,13 @@ class PlaybackService : MediaSessionService() {
             .build()
 
         player.addListener(RetryListener(player))
-        player.repeatMode = Player.REPEAT_MODE_ALL // ⏭ après la dernière favorite revient à la première
+        localPlayer = player
+
+        // Google Cast : CastPlayer bascule tout seul entre ce lecteur local et un appareil Cast
+        // (choisi dans l'appli ou dans le panneau de sortie d'Android). Sans services Google, lecture locale seule.
+        val sessionPlayer: Player = runCatching { CastPlayer.Builder(this).setLocalPlayer(player).build() }
+            .getOrElse { player }
+        sessionPlayer.repeatMode = Player.REPEAT_MODE_ALL // ⏭ après la dernière favorite revient à la première
 
         val openApp = PendingIntent.getActivity(
             this,
@@ -78,7 +87,7 @@ class PlaybackService : MediaSessionService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
-        mediaSession = MediaSession.Builder(this, NowPlayingPlayer(player))
+        mediaSession = MediaSession.Builder(this, NowPlayingPlayer(sessionPlayer))
             .setSessionActivity(openApp)
             .setCallback(SessionCallback())
             .build()
@@ -88,7 +97,8 @@ class PlaybackService : MediaSessionService() {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         val player = mediaSession?.player
-        if (player == null || !player.playWhenReady || player.mediaItemCount == 0) {
+        val casting = player?.deviceInfo?.playbackType == DeviceInfo.PLAYBACK_TYPE_REMOTE
+        if (player == null || (!casting && (!player.playWhenReady || player.mediaItemCount == 0))) {
             stopSelf()
         }
     }
@@ -100,6 +110,8 @@ class PlaybackService : MediaSessionService() {
             player.release()
             release()
         }
+        localPlayer?.release() // au cas où CastPlayer ne libère pas le lecteur local
+        localPlayer = null
         mediaSession = null
         super.onDestroy()
     }

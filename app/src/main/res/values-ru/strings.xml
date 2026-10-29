@@ -51,6 +51,6 @@
     <string name="cast_to">Воспроизвести на…</string>
     <string name="this_phone">Этот телефон</string>
     <string name="cast_searching">Поиск устройств в вашей сети Wi-Fi…</string>
-    <string name="cast_none">DLNA-устройства не найдены. Проверьте, что оно включено и подключено к той же сети Wi-Fi.</string>
-    <string name="cast_hint">DLNA-устройства в вашей сети Wi-Fi: усилители, колонки, телевизоры.</string>
+    <string name="cast_none">Устройства не найдены. Проверьте, что оно включено и подключено к той же сети Wi-Fi.</string>
+    <string name="cast_hint">Устройства в вашей сети Wi-Fi: Chromecast / Google TV (Cast) и DLNA-усилители, колонки, телевизоры.</string>
 </resources>

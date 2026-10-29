@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cast
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Speaker
 import androidx.compose.material.icons.filled.Smartphone
@@ -451,10 +452,10 @@ const val URL_PRIVACY = "https://github.com/rkroman-86/AndroRadio/blob/main/PRIV
 /** « Diffuser vers… » : ce téléphone, ou un appareil DLNA trouvé sur le réseau local. */
 @Composable
 fun CastPage(
-    search: com.plugyourhome.androradio.dlna.DeviceSearch,
-    current: com.plugyourhome.androradio.dlna.DlnaDevice?,
+    outputs: OutputList,
+    currentId: String?,
     onPhone: () -> Unit,
-    onDevice: (com.plugyourhome.androradio.dlna.DlnaDevice) -> Unit,
+    onDevice: (OutputTarget) -> Unit,
     onRefresh: () -> Unit,
     onClose: () -> Unit,
 ) {
@@ -464,16 +465,17 @@ fun CastPage(
                 CastRow(
                     icon = Icons.Filled.Smartphone,
                     label = stringResource(R.string.this_phone),
-                    selected = current == null,
+                    selected = currentId == null,
                     onClick = onPhone,
                 )
             }
-            items(search.devices, key = { it.id }) { device ->
+            items(outputs.targets, key = { it.id }) { target ->
                 CastRow(
-                    icon = Icons.Filled.Speaker,
-                    label = device.name,
-                    selected = current?.id == device.id,
-                    onClick = { onDevice(device) },
+                    icon = if (target.kind == OutputKind.CAST) Icons.Filled.Cast else Icons.Filled.Speaker,
+                    label = target.name,
+                    badge = if (target.kind == OutputKind.CAST) "Cast" else "DLNA",
+                    selected = currentId == target.id,
+                    onClick = { onDevice(target) },
                 )
             }
             item {
@@ -481,7 +483,7 @@ fun CastPage(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
                 ) {
-                    if (search.searching) {
+                    if (outputs.searching) {
                         CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                         Spacer(Modifier.width(12.dp))
                         Text(
@@ -491,7 +493,7 @@ fun CastPage(
                         )
                     } else {
                         Text(
-                            if (search.devices.isEmpty()) stringResource(R.string.cast_none)
+                            if (outputs.targets.isEmpty()) stringResource(R.string.cast_none)
                             else stringResource(R.string.cast_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -511,6 +513,7 @@ private fun CastRow(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
+    badge: String? = null,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -533,6 +536,14 @@ private fun CastRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
+        if (badge != null) {
+            Text(
+                badge,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(horizontal = 8.dp),
+            )
+        }
         if (selected) {
             Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         }

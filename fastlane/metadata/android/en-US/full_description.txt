@@ -13,7 +13,7 @@ Search tens of thousands of stations by name, genre, country, language, region o
 LISTEN YOUR WAY
 • Background playback with lock-screen and notification controls
 • Next / previous buttons (notification, headset, car) switch between your favorites
-• Play on DLNA devices on your Wi-Fi: amplifiers, speakers, TVs
+• Play on Chromecast / Google TV (Google Cast) and on DLNA devices: amplifiers, speakers, TVs
 • Automatic reconnection if a stream drops
 • MP3, AAC, OGG and HLS streams
 • Phone and tablet layouts
