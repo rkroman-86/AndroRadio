@@ -20,7 +20,7 @@ To work, the app connects directly to these services:
 | Service | What is sent | Why |
 |---|---|---|
 | [Radio Browser](https://www.radio-browser.info) (station directory) | The words you type in search; the country code of your device to suggest local stations; the identifier of a station when you start playing it (anonymous listening counter used by the directory) | To find stations |
-| [Apple iTunes Search API](https://performance-partners.apple.com/search-api), then [MusicBrainz](https://musicbrainz.org) and [Cover Art Archive](https://coverartarchive.org) if nothing is found | The artist and title of the song currently broadcast by the station | To display the album cover |
+| [MusicBrainz](https://musicbrainz.org) and [Cover Art Archive](https://coverartarchive.org), then [Apple iTunes Search API](https://performance-partners.apple.com/search-api) if nothing is found | The artist and title of the song currently broadcast by the station | To display the album cover |
 | The radio station's own server | A request for the audio stream | To play the station |
 
 Like any internet connection, these services receive your IP address and the app name and version. Their own privacy policies apply. The publisher receives none of this data.
@@ -50,7 +50,7 @@ Pour fonctionner, l'appli se connecte directement à ces services :
 | Service | Ce qui est envoyé | Pourquoi |
 |---|---|---|
 | [Radio Browser](https://www.radio-browser.info) (annuaire de stations) | Les mots tapés dans la recherche ; le code pays de l'appareil pour proposer des stations locales ; l'identifiant d'une station quand vous la lancez (compteur d'écoutes anonyme de l'annuaire) | Trouver des stations |
-| [API de recherche iTunes d'Apple](https://performance-partners.apple.com/search-api), puis [MusicBrainz](https://musicbrainz.org) et [Cover Art Archive](https://coverartarchive.org) si rien n'est trouvé | L'artiste et le titre du morceau diffusé par la station | Afficher la pochette d'album |
+| [MusicBrainz](https://musicbrainz.org) et [Cover Art Archive](https://coverartarchive.org), puis [API de recherche iTunes d'Apple](https://performance-partners.apple.com/search-api) si rien n'est trouvé | L'artiste et le titre du morceau diffusé par la station | Afficher la pochette d'album |
 | Le serveur de la station | Une demande du flux audio | Lire la station |
 
 Comme pour toute connexion internet, ces services reçoivent votre adresse IP ainsi que le nom et la version de l'appli. Leurs propres politiques de confidentialité s'appliquent. L'éditeur ne reçoit aucune de ces données.
@@ -79,7 +79,7 @@ Toute modification de cette politique sera publiée sur cette page.
 | Сервис | Что отправляется | Зачем |
 |---|---|---|
 | [Radio Browser](https://www.radio-browser.info) (каталог станций) | Слова, введённые в поиск; код страны устройства для местных станций; идентификатор станции при запуске (анонимный счётчик прослушиваний каталога) | Поиск станций |
-| [Поисковый API iTunes (Apple)](https://performance-partners.apple.com/search-api), затем [MusicBrainz](https://musicbrainz.org) и [Cover Art Archive](https://coverartarchive.org), если там ничего нет | Исполнитель и название песни, которую передаёт станция | Показ обложки альбома |
+| [MusicBrainz](https://musicbrainz.org) и [Cover Art Archive](https://coverartarchive.org), затем [поисковый API iTunes (Apple)](https://performance-partners.apple.com/search-api), если там ничего нет | Исполнитель и название песни, которую передаёт станция | Показ обложки альбома |
 | Сервер самой станции | Запрос аудиопотока | Воспроизведение |
 
 Как и при любом подключении к интернету, эти сервисы получают ваш IP-адрес, название и версию приложения. Действуют их собственные политики конфиденциальности. Издатель этих данных не получает.

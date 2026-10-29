@@ -36,10 +36,11 @@ data class Track(val artist: String?, val title: String) {
 
 /**
  * Pochette d'album du morceau en cours :
- * 1. d'abord l'API publique de recherche iTunes (Apple), la plus complète ;
- * 2. en secours, des bases ouvertes :
- * - MusicBrainz (https://musicbrainz.org) pour identifier l'album à partir d'« artiste + titre » ;
- * - Cover Art Archive (https://coverartarchive.org) pour l'image elle-même.
+ * 1. d'abord des bases ouvertes :
+ *    - MusicBrainz (https://musicbrainz.org) pour identifier l'album à partir d'« artiste + titre » ;
+ *    - Cover Art Archive (https://coverartarchive.org) pour l'image elle-même ;
+ * 2. si rien n'est trouvé (ou si MusicBrainz ne répond pas), l'API de recherche iTunes (Apple),
+ *    plus complète pour les morceaux récents.
  *
  * Règles MusicBrainz respectées : User-Agent avec nom, version et contact ;
  * au plus une requête par seconde ; résultats gardés en cache.
@@ -89,7 +90,7 @@ class TrackArtwork(client: OkHttpClient = RadioBrowserApi.defaultClient()) {
         val key = "${artist.lowercase()}|${track.title.lowercase()}"
         cache[key]?.let { return it.ifEmpty { null } }
         val url = try {
-            lookupApple(artist, track.title) ?: lookup(artist, track.title)
+            lookupOpenData(artist, track.title) ?: lookupApple(artist, track.title)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -105,7 +106,7 @@ class TrackArtwork(client: OkHttpClient = RadioBrowserApi.defaultClient()) {
     @Serializable
     private data class AppleResult(val artworkUrl100: String = "", val artistName: String = "")
 
-    /** Recherche iTunes ; erreur ou rien de fiable → null (on passe à MusicBrainz). */
+    /** Recherche iTunes (secours) ; erreur ou rien de fiable → null (on garde le logo de la station). */
     private suspend fun lookupApple(artist: String, title: String): String? = runCatching {
         withContext(Dispatchers.IO) {
             val url = "https://itunes.apple.com/search".toHttpUrl().newBuilder()
@@ -127,7 +128,16 @@ class TrackArtwork(client: OkHttpClient = RadioBrowserApi.defaultClient()) {
         }
     }.getOrNull()
 
-    private suspend fun lookup(artist: String, title: String): String? {
+    /** MusicBrainz + Cover Art Archive ; une erreur réseau donne null pour laisser sa chance à Apple. */
+    private suspend fun lookupOpenData(artist: String, title: String): String? = try {
+        lookupMusicBrainz(artist, title)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
+    }
+
+    private suspend fun lookupMusicBrainz(artist: String, title: String): String? {
         val recordings = searchRecordings(artist, title)
         val wanted = normalize(artist)
         val releases = recordings

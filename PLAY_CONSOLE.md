@@ -22,13 +22,16 @@ Tout ce qui est préparé dans le dépôt, et les réponses à donner dans la Pl
 - Crédit visible : écran « À propos » + description de la fiche ✅
 - Optionnel : signaler l'appli à l'auteur de Radio Browser pour figurer dans la liste des applis sur radio-browser.info.
 
-**Pochettes** : iTunes Search API (Apple) d'abord, MusicBrainz / Cover Art Archive en secours.
-- iTunes : une requête par changement de morceau, résultats en cache (Apple tolère environ 20 requêtes/min). Si Google Play ou Apple s'y opposent, supprimer `lookupApple` dans `TrackArtwork.kt` : MusicBrainz prend le relais seul.
+**Pochettes** : MusicBrainz / Cover Art Archive d'abord, iTunes Search API (Apple) en secours.
 
-**MusicBrainz / Cover Art Archive** (secours)
+**MusicBrainz / Cover Art Archive** (source principale)
 - User-Agent avec contact `AndroRadio/version ( https://github.com/rkroman-86/AndroRadio )` ✅
 - Au plus 1 requête par seconde, résultats en cache ✅
 - Une seule recherche par changement de morceau ✅
+
+**iTunes Search API** (secours, seulement si MusicBrainz ne trouve rien)
+- Une requête au plus par changement de morceau, résultats en cache (Apple tolère environ 20 requêtes/min).
+- Les conditions d'Apple réservent cette API à la promotion de leurs boutiques. Si Apple ou Google Play s'y opposent, retirer `?: lookupApple(...)` dans `TrackArtwork.kt` : MusicBrainz reste seul.
 
 ## 3. Signature de la version Play
 

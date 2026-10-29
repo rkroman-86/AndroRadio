@@ -24,5 +24,5 @@ AndroRadio — простой и быстрый проигрыватель ин�
 
 БЛАГОДАРНОСТИ
 Каталог станций: Radio Browser (radio-browser.info), свободная база, которую ведёт сообщество.
-Обложки: поисковый API iTunes (Apple), MusicBrainz и Cover Art Archive.
+Обложки: MusicBrainz, Cover Art Archive и поисковый API iTunes (Apple).
 AndroRadio не хранит, не записывает и не скачивает контент: потоки транслируют сами станции. Названия и логотипы станций принадлежат их владельцам.
