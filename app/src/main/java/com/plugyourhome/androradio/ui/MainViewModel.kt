@@ -72,6 +72,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (remote.state.value.isActive) remote.setVolume(value) else volume.set(value)
     }
 
+    /**
+     * Touches de volume du téléphone pendant une diffusion : elles règlent l'appareil distant.
+     * Renvoie false hors diffusion (le téléphone garde alors son comportement normal).
+     */
+    fun onVolumeKey(direction: Int): Boolean {
+        if (!remote.state.value.isActive) return false
+        val next = when (direction) {
+            0 -> 0f // touche « muet »
+            else -> (volumeLevel.value + direction * VOLUME_STEP).coerceIn(0f, 1f)
+        }
+        remote.setVolume(next)
+        return true
+    }
+
     // --- Fenêtre « Diffuser vers… » ---
 
     private val _castOpen = MutableStateFlow(false)
@@ -270,6 +284,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
         const val RECENT_COUNT = 10
+        const val VOLUME_STEP = 0.05f
         const val LOCAL_COUNT = 10
         const val LOCAL_POOL = 60
     }

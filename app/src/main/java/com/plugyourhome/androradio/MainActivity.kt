@@ -1,6 +1,7 @@
 package com.plugyourhome.androradio
 
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -21,5 +22,18 @@ class MainActivity : ComponentActivity() {
                 HomeScreen(viewModel)
             }
         }
+    }
+
+    /** Pendant une diffusion DLNA, les touches de volume pilotent l'appareil distant. */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val direction = when (event.keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP -> 1
+            KeyEvent.KEYCODE_VOLUME_DOWN -> -1
+            KeyEvent.KEYCODE_VOLUME_MUTE -> 0
+            else -> return super.dispatchKeyEvent(event)
+        }
+        if (!viewModel.remote.state.value.isActive) return super.dispatchKeyEvent(event)
+        if (event.action == KeyEvent.ACTION_DOWN) viewModel.onVolumeKey(direction)
+        return true // on consomme aussi le relâchement : pas de volume du téléphone en parallèle
     }
 }
