@@ -106,3 +106,12 @@ Pour les comptes développeur **personnels** récents, Google exige un test ferm
 
 - Si un diffuseur demande le retrait de sa station : la corriger ou la signaler dans Radio Browser (l'appli ne fait que lire l'annuaire).
 - Les APK de test (`dev`) restent signés avec la clé de test du dépôt et s'installent à côté de la version Play (`com.plugyourhome.androradio.debug`).
+
+## 8. Diffusion DLNA et Android 17
+
+La fonction « Diffuser vers… » découvre les appareils du réseau local (SSDP) et les pilote en HTTP local.
+Avec `targetSdk 36`, l'accès au réseau local est couvert par la permission INTERNET : rien à déclarer.
+Au passage à `targetSdk 37` (Android 17), il faudra déclarer et demander `ACCESS_LOCAL_NETWORK`
+(groupe « Appareils à proximité ») avant la recherche d'appareils — voir
+https://developer.android.com/privacy-and-security/local-network-permission
+

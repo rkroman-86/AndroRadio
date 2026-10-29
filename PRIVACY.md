@@ -21,12 +21,14 @@ To work, the app connects directly to these services:
 |---|---|---|
 | [Radio Browser](https://www.radio-browser.info) (station directory) | The words you type in search; the country code of your device to suggest local stations; the identifier of a station when you start playing it (anonymous listening counter used by the directory) | To find stations |
 | [MusicBrainz](https://musicbrainz.org) and [Cover Art Archive](https://coverartarchive.org), then [Apple iTunes Search API](https://performance-partners.apple.com/search-api) if nothing is found | The artist and title of the song currently broadcast by the station | To display the album cover |
+| A device you choose on your local network (DLNA: amplifier, speaker, TV) | The station's stream address and name, playback and volume commands | To play the station on that device |
 | The radio station's own server | A request for the audio stream | To play the station |
 
 Like any internet connection, these services receive your IP address and the app name and version. Their own privacy policies apply. The publisher receives none of this data.
 
 ### Permissions
 - **Internet / network state**: to play streams and search stations.
+- **Wi-Fi state / multicast**: to find DLNA devices on your local network when you use “Play on…”.
 - **Foreground service (media playback), wake lock, notifications**: to keep playing with the screen off and show playback controls.
 
 ### Children
@@ -51,12 +53,14 @@ Pour fonctionner, l'appli se connecte directement à ces services :
 |---|---|---|
 | [Radio Browser](https://www.radio-browser.info) (annuaire de stations) | Les mots tapés dans la recherche ; le code pays de l'appareil pour proposer des stations locales ; l'identifiant d'une station quand vous la lancez (compteur d'écoutes anonyme de l'annuaire) | Trouver des stations |
 | [MusicBrainz](https://musicbrainz.org) et [Cover Art Archive](https://coverartarchive.org), puis [API de recherche iTunes d'Apple](https://performance-partners.apple.com/search-api) si rien n'est trouvé | L'artiste et le titre du morceau diffusé par la station | Afficher la pochette d'album |
+| Un appareil que vous choisissez sur votre réseau local (DLNA : ampli, enceinte, TV) | L'adresse du flux et le nom de la station, les commandes de lecture et de volume | Lire la station sur cet appareil |
 | Le serveur de la station | Une demande du flux audio | Lire la station |
 
 Comme pour toute connexion internet, ces services reçoivent votre adresse IP ainsi que le nom et la version de l'appli. Leurs propres politiques de confidentialité s'appliquent. L'éditeur ne reçoit aucune de ces données.
 
 ### Autorisations
 - **Internet / état du réseau** : lire les flux et chercher des stations.
+- **État du Wi-Fi / multicast** : trouver les appareils DLNA de votre réseau local quand vous utilisez « Diffuser vers… ».
 - **Service de premier plan (lecture média), maintien en éveil, notifications** : continuer la lecture écran éteint et afficher les commandes.
 
 ### Enfants
@@ -80,12 +84,14 @@ Toute modification de cette politique sera publiée sur cette page.
 |---|---|---|
 | [Radio Browser](https://www.radio-browser.info) (каталог станций) | Слова, введённые в поиск; код страны устройства для местных станций; идентификатор станции при запуске (анонимный счётчик прослушиваний каталога) | Поиск станций |
 | [MusicBrainz](https://musicbrainz.org) и [Cover Art Archive](https://coverartarchive.org), затем [поисковый API iTunes (Apple)](https://performance-partners.apple.com/search-api), если там ничего нет | Исполнитель и название песни, которую передаёт станция | Показ обложки альбома |
+| Выбранное вами устройство в локальной сети (DLNA: усилитель, колонка, телевизор) | Адрес потока и название станции, команды воспроизведения и громкости | Воспроизведение на этом устройстве |
 | Сервер самой станции | Запрос аудиопотока | Воспроизведение |
 
 Как и при любом подключении к интернету, эти сервисы получают ваш IP-адрес, название и версию приложения. Действуют их собственные политики конфиденциальности. Издатель этих данных не получает.
 
 ### Разрешения
 - **Интернет / состояние сети**: воспроизведение потоков и поиск станций.
+- **Состояние Wi-Fi / multicast**: поиск DLNA-устройств в локальной сети при использовании «Воспроизвести на…».
 - **Служба переднего плана (воспроизведение), удержание активности, уведомления**: воспроизведение при выключенном экране и элементы управления.
 
 ### Дети

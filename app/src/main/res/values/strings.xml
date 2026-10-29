@@ -49,4 +49,9 @@
     <string name="about_source_code">Source code</string>
     <string name="settings">Settings</string>
     <string name="volume">Volume</string>
+    <string name="cast_to">Play on…</string>
+    <string name="this_phone">This phone</string>
+    <string name="cast_searching">Looking for devices on your Wi-Fi…</string>
+    <string name="cast_none">No DLNA device found. Check that it is on and connected to the same Wi-Fi.</string>
+    <string name="cast_hint">DLNA devices on your Wi-Fi: amplifiers, speakers, TVs.</string>
 </resources>

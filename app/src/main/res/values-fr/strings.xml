@@ -48,4 +48,9 @@
     <string name="about_source_code">Code source</string>
     <string name="settings">Réglages</string>
     <string name="volume">Volume</string>
+    <string name="cast_to">Diffuser vers…</string>
+    <string name="this_phone">Ce téléphone</string>
+    <string name="cast_searching">Recherche d’appareils sur votre Wi-Fi…</string>
+    <string name="cast_none">Aucun appareil DLNA trouvé. Vérifiez qu’il est allumé et sur le même Wi-Fi.</string>
+    <string name="cast_hint">Appareils DLNA de votre Wi-Fi : amplis, enceintes, TV.</string>
 </resources>

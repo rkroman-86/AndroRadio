@@ -48,4 +48,9 @@
     <string name="about_source_code">Исходный код</string>
     <string name="settings">Настройки</string>
     <string name="volume">Громкость</string>
+    <string name="cast_to">Воспроизвести на…</string>
+    <string name="this_phone">Этот телефон</string>
+    <string name="cast_searching">Поиск устройств в вашей сети Wi-Fi…</string>
+    <string name="cast_none">DLNA-устройства не найдены. Проверьте, что оно включено и подключено к той же сети Wi-Fi.</string>
+    <string name="cast_hint">DLNA-устройства в вашей сети Wi-Fi: усилители, колонки, телевизоры.</string>
 </resources>

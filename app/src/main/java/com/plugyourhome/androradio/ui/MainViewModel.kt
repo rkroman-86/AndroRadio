@@ -7,7 +7,11 @@ import androidx.lifecycle.viewModelScope
 import com.plugyourhome.androradio.AndroRadioApp
 import com.plugyourhome.androradio.data.Station
 import com.plugyourhome.androradio.data.Track
+import com.plugyourhome.androradio.dlna.DlnaDevice
+import com.plugyourhome.androradio.dlna.RemoteOutput
+import com.plugyourhome.androradio.dlna.RemoteTransport
 import com.plugyourhome.androradio.playback.PlayerConnection
+import com.plugyourhome.androradio.playback.PlayerUiState
 import com.plugyourhome.androradio.playback.VolumeControl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,6 +48,61 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     /** Volume multimédia du téléphone (0..1), réglé depuis la bande du bas. */
     val volume = VolumeControl(application)
 
+    /** Diffusion vers un appareil DLNA (Arylic, WiiM, TV…). */
+    val remote = RemoteOutput(application, viewModelScope)
+
+    /** État affiché : celui de l'appareil distant pendant une diffusion, sinon celui du téléphone. */
+    val playerState: StateFlow<PlayerUiState> = combine(player.state, remote.state) { local, r ->
+        if (!r.isActive) local
+        else PlayerUiState(
+            station = r.station,
+            nowPlaying = r.nowPlaying,
+            isPlaying = r.transport == RemoteTransport.PLAYING,
+            isBuffering = r.transport == RemoteTransport.LOADING,
+            hasError = r.transport == RemoteTransport.ERROR,
+        )
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, PlayerUiState())
+
+    /** Volume du curseur : celui de l'appareil distant pendant une diffusion. */
+    val volumeLevel: StateFlow<Float> = combine(volume.level, remote.state) { v, r ->
+        if (r.isActive) r.volume ?: 0.5f else v
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, volume.level.value)
+
+    fun setVolume(value: Float) {
+        if (remote.state.value.isActive) remote.setVolume(value) else volume.set(value)
+    }
+
+    // --- Fenêtre « Diffuser vers… » ---
+
+    private val _castOpen = MutableStateFlow(false)
+    val castOpen = _castOpen.asStateFlow()
+
+    fun openCast() {
+        _castOpen.value = true
+        remote.startSearch()
+    }
+
+    fun closeCast() {
+        _castOpen.value = false
+    }
+
+    /** Envoie la station en cours (ou la dernière écoutée) vers l'appareil choisi. */
+    fun castTo(device: DlnaDevice) {
+        val station = currentStation.value
+        player.stop()
+        remote.connect(device, station)
+        station?.let { s -> viewModelScope.launch { api.registerClick(s.uuid) } }
+        _castOpen.value = false
+    }
+
+    /** Revient sur le téléphone ; reprend la station ici si elle jouait sur l'appareil. */
+    fun castToPhone() {
+        val wasPlaying = playerState.value.isActive
+        val station = remote.disconnect()
+        if (wasPlaying && station != null) player.play(station)
+        _castOpen.value = false
+    }
+
     /** Code pays de l'appareil (ex. « FR »), vide si inconnu. */
     // Région du système (et non de l'appli) : choisir une autre langue dans l'appli
     // ne doit pas faire perdre le pays des stations locales.
@@ -60,12 +119,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val favorites: StateFlow<List<Station?>> = store.favorites
 
     /** Station affichée en haut : celle du lecteur, sinon la dernière écoutée. */
-    val currentStation: StateFlow<Station?> = combine(player.state, store.recent) { p, r ->
+    val currentStation: StateFlow<Station?> = combine(playerState, store.recent) { p, r ->
         p.station ?: r.firstOrNull()
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** Morceau en cours (artiste / titre), seulement pendant la lecture. */
-    val track: StateFlow<Track?> = player.state
+    val track: StateFlow<Track?> = playerState
         .map { if (it.isActive) Track.parse(it.nowPlaying) else null }
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -154,15 +213,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun play(station: Station) {
-        player.play(station)
+        if (remote.state.value.isActive) remote.play(station) else player.play(station)
         store.addRecent(station)
         viewModelScope.launch { api.registerClick(station.uuid) }
     }
 
     /** Bouton unique Lecture / Stop. */
     fun togglePlayStop() {
-        if (player.state.value.isActive) player.stop()
-        else currentStation.value?.let(::play)
+        val remoteOn = remote.state.value.isActive
+        when {
+            playerState.value.isActive -> if (remoteOn) remote.stop() else player.stop()
+            remoteOn && remote.state.value.station != null -> remote.resume()
+            else -> currentStation.value?.let(::play)
+        }
     }
 
     fun openFavorites(stationToSave: Station? = currentStation.value) {

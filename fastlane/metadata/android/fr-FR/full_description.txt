@@ -13,6 +13,7 @@ Recherchez parmi des dizaines de milliers de stations par nom, genre, pays, lang
 ÉCOUTEZ COMME VOUS VOULEZ
 • Lecture en arrière-plan, commandes sur l'écran verrouillé et dans la notification
 • Boutons suivant / précédent (notification, casque, voiture) pour passer d'un favori à l'autre
+• Diffusion vers les appareils DLNA de votre Wi-Fi : amplis, enceintes, TV
 • Reconnexion automatique si un flux décroche
 • Flux MP3, AAC, OGG et HLS
 • Affichage adapté au téléphone et à la tablette

@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cast
+import androidx.compose.material.icons.filled.CastConnected
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -66,7 +68,8 @@ import com.plugyourhome.androradio.playback.PlayerUiState
  */
 @Composable
 fun HomeScreen(vm: MainViewModel) {
-    val player by vm.player.state.collectAsStateWithLifecycle()
+    val player by vm.playerState.collectAsStateWithLifecycle()
+    val remote by vm.remote.state.collectAsStateWithLifecycle()
     val current by vm.currentStation.collectAsStateWithLifecycle()
     val recent by vm.recent.collectAsStateWithLifecycle()
     val favorites by vm.favorites.collectAsStateWithLifecycle()
@@ -79,7 +82,7 @@ fun HomeScreen(vm: MainViewModel) {
 
     val track by vm.track.collectAsStateWithLifecycle()
     val trackArt by vm.trackArt.collectAsStateWithLifecycle()
-    val volume by vm.volume.level.collectAsStateWithLifecycle()
+    val volume by vm.volumeLevel.collectAsStateWithLifecycle()
 
     HomeBands(
         current = current,
@@ -98,8 +101,23 @@ fun HomeScreen(vm: MainViewModel) {
         onSearch = vm::openSearch,
         onAbout = vm::openAbout,
         volume = volume,
-        onVolumeChange = vm.volume::set,
+        onVolumeChange = vm::setVolume,
+        castName = remote.device?.name,
+        onCast = vm::openCast,
     )
+
+    val castOpen by vm.castOpen.collectAsStateWithLifecycle()
+    if (castOpen) {
+        val devices by vm.remote.search.collectAsStateWithLifecycle()
+        CastPage(
+            search = devices,
+            current = remote.device,
+            onPhone = vm::castToPhone,
+            onDevice = vm::castTo,
+            onRefresh = vm.remote::startSearch,
+            onClose = vm::closeCast,
+        )
+    }
 
     favoritesSheet?.let { sheet ->
         FavoritesPage(
@@ -163,6 +181,8 @@ fun HomeBands(
     onAbout: () -> Unit,
     volume: Float = 0.6f,
     onVolumeChange: (Float) -> Unit = {},
+    castName: String? = null,
+    onCast: () -> Unit = {},
 ) {
     val currentUuid = player.station?.uuid
     Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
@@ -176,7 +196,7 @@ fun HomeBands(
             // Hauteurs relatives : en cours 1,25 · trois bandes de stations 1 · contrôles 0,5
             val band = Modifier.weight(1f)
 
-            NowPlayingBand(current, player, track, trackArt, onFavorites, onSearch, onAbout, Modifier.weight(1.25f))
+            NowPlayingBand(current, player, track, trackArt, castName, onFavorites, onSearch, onAbout, Modifier.weight(1.25f))
 
             StationBand(
                 title = stringResource(R.string.band_recent),
@@ -209,6 +229,8 @@ fun HomeBands(
                 onPlayStop = onPlayStop,
                 volume = volume,
                 onVolumeChange = onVolumeChange,
+                casting = castName != null,
+                onCast = onCast,
                 modifier = Modifier.weight(0.5f),
             )
         }
@@ -222,6 +244,7 @@ private fun NowPlayingBand(
     player: PlayerUiState,
     track: Track?,
     trackArt: String?,
+    castName: String?,
     onFavorites: () -> Unit,
     onSearch: () -> Unit,
     onAbout: () -> Unit,
@@ -266,7 +289,25 @@ private fun NowPlayingBand(
                                 else MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                             )
-                            if (station.details.isNotBlank()) {
+                            if (castName != null) {
+                                // Diffusion en cours vers un appareil du réseau
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Filled.CastConnected,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        castName,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            } else if (station.details.isNotBlank()) {
                                 Text(
                                     station.details,
                                     style = MaterialTheme.typography.bodySmall,
@@ -383,6 +424,8 @@ private fun ControlsBand(
     onPlayStop: () -> Unit,
     volume: Float,
     onVolumeChange: (Float) -> Unit,
+    casting: Boolean,
+    onCast: () -> Unit,
     modifier: Modifier,
 ) {
     Band(modifier) {
@@ -421,9 +464,16 @@ private fun ControlsBand(
                 onValueChange = onVolumeChange,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 8.dp)
                     .semantics { contentDescription = volumeLabel },
             )
+            // Diffuser vers un appareil du réseau (Arylic, TV, ampli…)
+            IconButton(onClick = onCast) {
+                Icon(
+                    if (casting) Icons.Filled.CastConnected else Icons.Filled.Cast,
+                    contentDescription = stringResource(R.string.cast_to),
+                    tint = if (casting) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

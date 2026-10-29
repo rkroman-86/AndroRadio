@@ -27,6 +27,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Speaker
+import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -444,3 +447,94 @@ const val URL_MUSICBRAINZ = "https://musicbrainz.org"
 const val URL_COVER_ART = "https://coverartarchive.org"
 const val URL_SOURCE = "https://github.com/rkroman-86/AndroRadio"
 const val URL_PRIVACY = "https://github.com/rkroman-86/AndroRadio/blob/main/PRIVACY.md"
+
+/** « Diffuser vers… » : ce téléphone, ou un appareil DLNA trouvé sur le réseau local. */
+@Composable
+fun CastPage(
+    search: com.plugyourhome.androradio.dlna.DeviceSearch,
+    current: com.plugyourhome.androradio.dlna.DlnaDevice?,
+    onPhone: () -> Unit,
+    onDevice: (com.plugyourhome.androradio.dlna.DlnaDevice) -> Unit,
+    onRefresh: () -> Unit,
+    onClose: () -> Unit,
+) {
+    FloatingPage(stringResource(R.string.cast_to), onClose) {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            item {
+                CastRow(
+                    icon = Icons.Filled.Smartphone,
+                    label = stringResource(R.string.this_phone),
+                    selected = current == null,
+                    onClick = onPhone,
+                )
+            }
+            items(search.devices, key = { it.id }) { device ->
+                CastRow(
+                    icon = Icons.Filled.Speaker,
+                    label = device.name,
+                    selected = current?.id == device.id,
+                    onClick = { onDevice(device) },
+                )
+            }
+            item {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
+                ) {
+                    if (search.searching) {
+                        CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            stringResource(R.string.cast_searching),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        Text(
+                            if (search.devices.isEmpty()) stringResource(R.string.cast_none)
+                            else stringResource(R.string.cast_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = onRefresh) { Text(stringResource(R.string.retry)) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CastRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.width(16.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        if (selected) {
+            Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
