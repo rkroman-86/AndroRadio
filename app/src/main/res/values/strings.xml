@@ -38,11 +38,11 @@
     <string name="about_directory_title">Station directory</string>
     <string name="about_directory_text">Stations are found with Radio Browser (radio-browser.info), a free, community-run directory whose data is in the public domain. A wrong or broken station can be corrected there.</string>
     <string name="about_art_title">Album art</string>
-    <string name="about_art_text">Covers of the songs being played come from MusicBrainz and the Cover Art Archive, open music databases. Station logos are provided by Radio Browser.</string>
+    <string name="about_art_text">Covers of the songs being played come from the iTunes Search API (Apple), or else from MusicBrainz and the Cover Art Archive, open music databases. Station logos are provided by Radio Browser.</string>
     <string name="about_streams_title">Streams</string>
     <string name="about_streams_text">Streams are broadcast by the stations themselves. AndroRadio only plays them: it does not host, record or download any content. Station names and logos belong to their owners.</string>
     <string name="about_privacy_title">Privacy</string>
-    <string name="about_privacy_text">No account, no ads, no tracking. Favorites and history stay on this device. Search words are sent to Radio Browser and song names to MusicBrainz only to answer your request.</string>
+    <string name="about_privacy_text">No account, no ads, no tracking. Favorites and history stay on this device. Search words are sent to Radio Browser and song names to Apple and MusicBrainz only to answer your request.</string>
     <string name="about_privacy_link">Privacy policy</string>
     <string name="about_opensource_title">Open-source software</string>
     <string name="about_opensource_text">Built with AndroidX Media3, Jetpack Compose, OkHttp, Coil and kotlinx.serialization (Apache License 2.0).</string>

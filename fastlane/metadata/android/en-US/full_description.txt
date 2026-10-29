@@ -24,5 +24,5 @@ Available in English, French and Russian.
 
 CREDITS
 Station directory: Radio Browser (radio-browser.info), a free, community-run database.
-Album art: MusicBrainz and Cover Art Archive.
+Album art: iTunes Search API (Apple), MusicBrainz and Cover Art Archive.
 AndroRadio does not host, record or download any content: streams are broadcast by the stations themselves. Station names and logos belong to their owners.

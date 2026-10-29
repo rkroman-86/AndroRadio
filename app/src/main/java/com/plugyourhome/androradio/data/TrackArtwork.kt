@@ -35,7 +35,9 @@ data class Track(val artist: String?, val title: String) {
 }
 
 /**
- * Pochette d'album du morceau en cours, à partir de bases ouvertes :
+ * Pochette d'album du morceau en cours :
+ * 1. d'abord l'API publique de recherche iTunes (Apple), la plus complète ;
+ * 2. en secours, des bases ouvertes :
  * - MusicBrainz (https://musicbrainz.org) pour identifier l'album à partir d'« artiste + titre » ;
  * - Cover Art Archive (https://coverartarchive.org) pour l'image elle-même.
  *
@@ -87,7 +89,7 @@ class TrackArtwork(client: OkHttpClient = RadioBrowserApi.defaultClient()) {
         val key = "${artist.lowercase()}|${track.title.lowercase()}"
         cache[key]?.let { return it.ifEmpty { null } }
         val url = try {
-            lookup(artist, track.title)
+            lookupApple(artist, track.title) ?: lookup(artist, track.title)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -96,6 +98,34 @@ class TrackArtwork(client: OkHttpClient = RadioBrowserApi.defaultClient()) {
         cache[key] = url.orEmpty()
         return url
     }
+
+    @Serializable
+    private data class AppleResponse(val results: List<AppleResult> = emptyList())
+
+    @Serializable
+    private data class AppleResult(val artworkUrl100: String = "", val artistName: String = "")
+
+    /** Recherche iTunes ; erreur ou rien de fiable → null (on passe à MusicBrainz). */
+    private suspend fun lookupApple(artist: String, title: String): String? = runCatching {
+        withContext(Dispatchers.IO) {
+            val url = "https://itunes.apple.com/search".toHttpUrl().newBuilder()
+                .addQueryParameter("term", "$artist $title")
+                .addQueryParameter("media", "music")
+                .addQueryParameter("entity", "song")
+                .addQueryParameter("limit", "5")
+                .build()
+            val body = client.newCall(Request.Builder().url(url).header("User-Agent", USER_AGENT).build())
+                .execute().use { if (it.isSuccessful) it.body?.string() else null } ?: return@withContext null
+            val wanted = normalize(artist)
+            AppJson.decodeFromString<AppleResponse>(body).results
+                .firstOrNull { r ->
+                    val name = normalize(r.artistName)
+                    name.isNotEmpty() && (name.contains(wanted) || wanted.contains(name))
+                }
+                ?.artworkUrl100?.takeIf { it.isNotBlank() }
+                ?.replace("100x100bb", "600x600bb")
+        }
+    }.getOrNull()
 
     private suspend fun lookup(artist: String, title: String): String? {
         val recordings = searchRecordings(artist, title)

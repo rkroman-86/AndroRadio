@@ -37,11 +37,11 @@
     <string name="about_directory_title">Каталог станций</string>
     <string name="about_directory_text">Станции находятся через Radio Browser (radio-browser.info) — свободный каталог, который ведёт сообщество; его данные находятся в общественном достоянии. Ошибочную или неработающую станцию можно исправить там.</string>
     <string name="about_art_title">Обложки альбомов</string>
-    <string name="about_art_text">Обложки песен берутся из MusicBrainz и Cover Art Archive — открытых музыкальных баз. Логотипы станций предоставляет Radio Browser.</string>
+    <string name="about_art_text">Обложки песен берутся из поискового API iTunes (Apple), а если там нет — из MusicBrainz и Cover Art Archive, открытых музыкальных баз. Логотипы станций предоставляет Radio Browser.</string>
     <string name="about_streams_title">Потоки</string>
     <string name="about_streams_text">Потоки транслируют сами станции. AndroRadio только воспроизводит их: приложение не хранит, не записывает и не скачивает контент. Названия и логотипы станций принадлежат их владельцам.</string>
     <string name="about_privacy_title">Конфиденциальность</string>
-    <string name="about_privacy_text">Без аккаунта, рекламы и слежки. Избранное и история остаются на устройстве. Поисковые слова отправляются в Radio Browser, а названия песен — в MusicBrainz, только чтобы выполнить ваш запрос.</string>
+    <string name="about_privacy_text">Без аккаунта, рекламы и слежки. Избранное и история остаются на устройстве. Поисковые слова отправляются в Radio Browser, а названия песен — в Apple и MusicBrainz, только чтобы выполнить ваш запрос.</string>
     <string name="about_privacy_link">Политика конфиденциальности</string>
     <string name="about_opensource_title">Открытое ПО</string>
     <string name="about_opensource_text">Создано с AndroidX Media3, Jetpack Compose, OkHttp, Coil и kotlinx.serialization (лицензия Apache 2.0).</string>

@@ -24,5 +24,5 @@ Disponible en français, anglais et russe.
 
 CRÉDITS
 Annuaire des stations : Radio Browser (radio-browser.info), base libre tenue par la communauté.
-Pochettes : MusicBrainz et Cover Art Archive.
+Pochettes : API de recherche iTunes (Apple), MusicBrainz et Cover Art Archive.
 AndroRadio n'héberge, n'enregistre ni ne télécharge aucun contenu : les flux sont diffusés par les stations elles-mêmes. Les noms et logos des stations appartiennent à leurs propriétaires.

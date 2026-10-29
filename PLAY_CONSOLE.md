@@ -22,7 +22,10 @@ Tout ce qui est préparé dans le dépôt, et les réponses à donner dans la Pl
 - Crédit visible : écran « À propos » + description de la fiche ✅
 - Optionnel : signaler l'appli à l'auteur de Radio Browser pour figurer dans la liste des applis sur radio-browser.info.
 
-**MusicBrainz / Cover Art Archive** (pochettes, remplace iTunes)
+**Pochettes** : iTunes Search API (Apple) d'abord, MusicBrainz / Cover Art Archive en secours.
+- iTunes : une requête par changement de morceau, résultats en cache (Apple tolère environ 20 requêtes/min). Si Google Play ou Apple s'y opposent, supprimer `lookupApple` dans `TrackArtwork.kt` : MusicBrainz prend le relais seul.
+
+**MusicBrainz / Cover Art Archive** (secours)
 - User-Agent avec contact `AndroRadio/version ( https://github.com/rkroman-86/AndroRadio )` ✅
 - Au plus 1 requête par seconde, résultats en cache ✅
 - Une seule recherche par changement de morceau ✅
@@ -78,7 +81,7 @@ Ne pas utiliser de captures réelles avec de vraies stations (logos, pochettes e
 L'éditeur ne collecte rien, mais l'appli **transmet** des données à des services tiers. Réponse recommandée (prudente) :
 
 - **Votre appli collecte-t-elle ou partage-t-elle des données ?** Oui
-- **Chiffrement en transit** : Oui (HTTPS vers Radio Browser, MusicBrainz, Cover Art Archive)
+- **Chiffrement en transit** : Oui (HTTPS vers Radio Browser, Apple iTunes, MusicBrainz, Cover Art Archive)
 - **Suppression des données** : pas de compte ni de stockage côté éditeur (indiquer qu'aucune donnée n'est conservée par l'éditeur)
 - **Type de données** : *Activité dans l'appli → Historique des recherches dans l'appli*
   - Collectée : oui — Partagée : non (envoi à Radio Browser déclenché par l'utilisateur, exemption « action de l'utilisateur »)

@@ -7,7 +7,7 @@ Interface en anglais, français et russe.
 
 - Recherche de stations dans l'annuaire libre [Radio Browser](https://www.radio-browser.info) : par nom, genre, pays de l'appareil ou monde entier.
 - Lecture en arrière-plan (Media3 / ExoPlayer) : notification, écran verrouillé, boutons Bluetooth, pause si le casque est débranché, pause pendant les appels.
-- Artiste et titre en cours (métadonnées ICY / ID3), pochette d'album via MusicBrainz et Cover Art Archive, sinon logo de la station.
+- Artiste et titre en cours (métadonnées ICY / ID3), pochette d'album via iTunes (Apple), sinon MusicBrainz et Cover Art Archive, sinon logo de la station.
 - Flux MP3, AAC, OGG, HLS ; flux `http://` acceptés.
 - Reconnexion automatique (3 essais) si un flux décroche.
 - Favoris et historique (50 dernières stations), stockés uniquement sur l'appareil.
@@ -92,5 +92,5 @@ Réponses « Sécurité des données » et « Contenu de l'appli » : voir [PLAY
 ## Crédits
 
 - Annuaire des stations : [Radio Browser](https://www.radio-browser.info), base communautaire libre, données dans le domaine public. AndroRadio applique les [règles d'usage de l'API](https://docs.radio-browser.info) : User-Agent descriptif, serveurs trouvés par DNS, compteur d'écoutes.
-- Pochettes d'album : [MusicBrainz](https://musicbrainz.org) et [Cover Art Archive](https://coverartarchive.org) (User-Agent avec contact, 1 requête/s au plus).
+- Pochettes d'album : API de recherche iTunes d'Apple en priorité, puis [MusicBrainz](https://musicbrainz.org) et [Cover Art Archive](https://coverartarchive.org) en secours (User-Agent avec contact, 1 requête/s au plus).
 - AndroRadio n'héberge, n'enregistre ni ne télécharge aucun contenu : les flux sont diffusés par les stations.

@@ -37,11 +37,11 @@
     <string name="about_directory_title">Annuaire des stations</string>
     <string name="about_directory_text">Les stations sont trouvées grâce à Radio Browser (radio-browser.info), un annuaire libre tenu par la communauté, dont les données sont dans le domaine public. Une station erronée ou cassée peut y être corrigée.</string>
     <string name="about_art_title">Pochettes d’album</string>
-    <string name="about_art_text">Les pochettes des morceaux viennent de MusicBrainz et du Cover Art Archive, des bases musicales ouvertes. Les logos des stations sont fournis par Radio Browser.</string>
+    <string name="about_art_text">Les pochettes des morceaux viennent de l’API de recherche iTunes (Apple), ou à défaut de MusicBrainz et du Cover Art Archive, des bases musicales ouvertes. Les logos des stations sont fournis par Radio Browser.</string>
     <string name="about_streams_title">Flux audio</string>
     <string name="about_streams_text">Les flux sont diffusés par les stations elles-mêmes. AndroRadio se contente de les lire : l’appli n’héberge, n’enregistre ni ne télécharge aucun contenu. Les noms et logos des stations appartiennent à leurs propriétaires.</string>
     <string name="about_privacy_title">Confidentialité</string>
-    <string name="about_privacy_text">Pas de compte, pas de pub, pas de suivi. Favoris et historique restent sur cet appareil. Les mots recherchés sont envoyés à Radio Browser et les titres de morceaux à MusicBrainz, uniquement pour répondre à votre demande.</string>
+    <string name="about_privacy_text">Pas de compte, pas de pub, pas de suivi. Favoris et historique restent sur cet appareil. Les mots recherchés sont envoyés à Radio Browser et les titres de morceaux à Apple et MusicBrainz, uniquement pour répondre à votre demande.</string>
     <string name="about_privacy_link">Politique de confidentialité</string>
     <string name="about_opensource_title">Logiciels libres</string>
     <string name="about_opensource_text">Construite avec AndroidX Media3, Jetpack Compose, OkHttp, Coil et kotlinx.serialization (licence Apache 2.0).</string>
