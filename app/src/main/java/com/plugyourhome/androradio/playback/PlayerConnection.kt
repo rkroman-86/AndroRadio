@@ -2,7 +2,11 @@ package com.plugyourhome.androradio.playback
 
 import android.content.ComponentName
 import android.content.Context
+import android.os.Bundle
 import androidx.media3.common.DeviceInfo
+import androidx.media3.session.SessionCommand
+import com.plugyourhome.androradio.dlna.DlnaCommands
+import com.plugyourhome.androradio.dlna.DlnaDevice
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.annotation.OptIn
@@ -28,6 +32,9 @@ data class PlayerUiState(
     val isCasting: Boolean = false,
     /** Volume de l'appareil Cast (0..1), si connu. */
     val castVolume: Float? = null,
+    /** Appareil DLNA qui joue (géré par le service), null sinon. */
+    val dlnaName: String? = null,
+    val dlnaId: String? = null,
 ) {
     val isActive: Boolean get() = isPlaying || isBuffering
 }
@@ -53,7 +60,14 @@ class PlayerConnection(context: Context, scope: CoroutineScope) {
     init {
         scope.launch {
             val token = SessionToken(appContext, ComponentName(appContext, PlaybackService::class.java))
-            val c = runCatching { MediaController.Builder(appContext, token).buildAsync().await() }
+            val c = runCatching {
+                MediaController.Builder(appContext, token)
+                    .setListener(object : MediaController.Listener {
+                        // Le service annonce ici l'appareil DLNA en cours
+                        override fun onExtrasChanged(controller: MediaController, extras: Bundle) = publish(controller)
+                    })
+                    .buildAsync().await()
+            }
                 .getOrNull() ?: return@launch
             controller = c
             c.addListener(listener)
@@ -89,6 +103,19 @@ class PlayerConnection(context: Context, scope: CoroutineScope) {
     /** Arrête le flux mais garde la station chargée (elle reste affichée comme station actuelle). */
     fun stop() = withController { this.stop() }
 
+    /** Bascule la lecture vers un appareil DLNA (géré par le service). */
+    fun connectDlna(device: DlnaDevice, station: Station?) = withController {
+        sendCustomCommand(SessionCommand(DlnaCommands.CONNECT, Bundle.EMPTY), DlnaCommands.connectArgs(device, station))
+    }
+
+    /** Termine la diffusion DLNA ; [resume] relance la station sur le téléphone. */
+    fun disconnectDlna(resume: Boolean) = withController {
+        sendCustomCommand(
+            SessionCommand(DlnaCommands.DISCONNECT, Bundle.EMPTY),
+            Bundle().apply { putBoolean(DlnaCommands.KEY_RESUME, resume) },
+        )
+    }
+
     /** Volume de l'appareil Cast (0..1). */
     fun setCastVolume(value: Float) = withController {
         val info = deviceInfo
@@ -121,6 +148,8 @@ class PlayerConnection(context: Context, scope: CoroutineScope) {
             nowPlaying = title,
             isPlaying = player.isPlaying,
             isCasting = player.deviceInfo.playbackType == DeviceInfo.PLAYBACK_TYPE_REMOTE,
+            dlnaName = (player as? MediaController)?.sessionExtras?.getString(DlnaCommands.EXTRA_OUTPUT_NAME),
+            dlnaId = (player as? MediaController)?.sessionExtras?.getString(DlnaCommands.EXTRA_OUTPUT_ID),
             castVolume = player.deviceInfo.takeIf { it.playbackType == DeviceInfo.PLAYBACK_TYPE_REMOTE && it.maxVolume > it.minVolume }
                 ?.let { (player.deviceVolume - it.minVolume).toFloat() / (it.maxVolume - it.minVolume) },
             isBuffering = player.playWhenReady && player.playbackState == Player.STATE_BUFFERING,

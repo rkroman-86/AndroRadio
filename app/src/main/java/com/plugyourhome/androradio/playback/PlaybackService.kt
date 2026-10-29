@@ -19,7 +19,15 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import android.os.Bundle
 import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionError
+import androidx.media3.session.SessionResult
+import com.plugyourhome.androradio.dlna.DlnaCommands
+import com.plugyourhome.androradio.dlna.DlnaDevice
+import com.plugyourhome.androradio.dlna.DlnaPlayer
+import com.plugyourhome.androradio.dlna.RemoteOutput
 import androidx.media3.session.MediaSessionService
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -47,6 +55,13 @@ class PlaybackService : MediaSessionService() {
     private val handler = Handler(Looper.getMainLooper())
     private var retryCount = 0
     private var localPlayer: ExoPlayer? = null
+
+    /** Lecteur normal de la session : téléphone ou Google Cast (CastPlayer). */
+    private var mainPlayer: Player? = null
+
+    /** Diffusion DLNA en cours (null sinon) : son lecteur remplace mainPlayer dans la session. */
+    private var dlna: DlnaPlayer? = null
+    private var dlnaOutput: RemoteOutput? = null
 
     private val app get() = application as AndroRadioApp
     private val store get() = app.store
@@ -79,6 +94,7 @@ class PlaybackService : MediaSessionService() {
         val sessionPlayer: Player = runCatching { CastPlayer.Builder(this).setLocalPlayer(player).build() }
             .getOrElse { player }
         sessionPlayer.repeatMode = Player.REPEAT_MODE_ALL // ⏭ après la dernière favorite revient à la première
+        mainPlayer = sessionPlayer
 
         val openApp = PendingIntent.getActivity(
             this,
@@ -105,11 +121,11 @@ class PlaybackService : MediaSessionService() {
 
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
+        dlna?.release()
+        dlna = null
         serviceScope.cancel()
-        mediaSession?.run {
-            player.release()
-            release()
-        }
+        mediaSession?.release()
+        mainPlayer?.release() // CastPlayer (ou lecteur local) : libéré une seule fois ici
         localPlayer?.release() // au cas où CastPlayer ne libère pas le lecteur local
         localPlayer = null
         mediaSession = null
@@ -120,7 +136,7 @@ class PlaybackService : MediaSessionService() {
      * Métadonnées présentées à la notification et à l'appli : le morceau en cours en titre,
      * le nom de la station en artiste. Sans morceau connu, le nom de la station en titre.
      */
-    private class NowPlayingPlayer(player: Player) : ForwardingPlayer(player) {
+    private class NowPlayingPlayer(val inner: Player) : ForwardingPlayer(inner) {
 
         // Radio en direct : ⏮ ⏭ changent toujours de station (jamais « retour au début »).
         override fun seekToNext() = seekToNextMediaItem()
@@ -137,6 +153,9 @@ class PlaybackService : MediaSessionService() {
             val builder = metadata.buildUpon()
             if (metadata.title.isNullOrBlank()) builder.setTitle(station)
             if (metadata.artist.isNullOrBlank()) builder.setArtist(station)
+            if (metadata.artworkUri == null) {
+                currentMediaItem?.mediaMetadata?.artworkUri?.let(builder::setArtworkUri)
+            }
             return builder.build()
         }
     }
@@ -185,6 +204,17 @@ class PlaybackService : MediaSessionService() {
             controller: MediaSession.ControllerInfo,
         ): MediaSession.ConnectionResult =
             MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                .apply {
+                    // Seule notre appli peut basculer la lecture vers un appareil DLNA.
+                    if (controller.packageName == packageName) {
+                        setAvailableSessionCommands(
+                            MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
+                                .add(SessionCommand(DlnaCommands.CONNECT, Bundle.EMPTY))
+                                .add(SessionCommand(DlnaCommands.DISCONNECT, Bundle.EMPTY))
+                                .build()
+                        )
+                    }
+                }
                 .setAvailablePlayerCommands(
                     MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
                         .removeAll(
@@ -195,6 +225,24 @@ class PlaybackService : MediaSessionService() {
                         .build()
                 )
                 .build()
+
+        override fun onCustomCommand(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            customCommand: SessionCommand,
+            args: Bundle,
+        ): ListenableFuture<SessionResult> {
+            when (customCommand.customAction) {
+                DlnaCommands.CONNECT -> {
+                    val device = DlnaCommands.deviceFrom(args)
+                        ?: return Futures.immediateFuture(SessionResult(SessionError.ERROR_BAD_VALUE))
+                    connectDlna(device, DlnaCommands.stationFrom(args))
+                }
+                DlnaCommands.DISCONNECT -> disconnectDlna(args.getBoolean(DlnaCommands.KEY_RESUME, false))
+                else -> return super.onCustomCommand(session, controller, customCommand, args)
+            }
+            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+        }
 
         /**
          * Lancer une station charge en fait la liste des favoris autour d'elle,
@@ -236,6 +284,56 @@ class PlaybackService : MediaSessionService() {
                 ?: throw UnsupportedOperationException("No station played yet")
             serviceScope.launch { app.api.registerClick(last.uuid) }
             playlistAround(last)
+        }
+    }
+
+    /**
+     * Bascule la session vers un appareil DLNA : le lecteur du téléphone s'arrête et un DlnaPlayer
+     * prend sa place, pour que notification, widget, ⏮ ⏭ et volume pilotent l'appareil.
+     */
+    private fun connectDlna(device: DlnaDevice, station: Station?) {
+        val session = mediaSession ?: return
+        val main = mainPlayer ?: return
+        val last = station ?: Station.fromMetadata(main.currentMediaItem?.mediaMetadata) ?: store.recent.value.firstOrNull()
+
+        dlna?.release()
+        dlnaOutput?.disconnect()
+        main.stop()
+
+        val output = RemoteOutput(this, serviceScope)
+        val player = DlnaPlayer(output, serviceScope) { started ->
+            store.addRecent(started)
+            serviceScope.launch { app.api.registerClick(started.uuid) }
+        }
+        dlnaOutput = output
+        dlna = player
+        output.connect(device, last)
+        if (last != null) {
+            val playlist = playlistAround(last)
+            player.start(
+                playlist.mediaItems.mapNotNull { Station.fromMetadata(it.mediaMetadata) },
+                playlist.startIndex,
+            )
+        }
+        session.player = NowPlayingPlayer(player)
+        session.setSessionExtras(DlnaCommands.extrasFor(device))
+    }
+
+    /** Revient au lecteur normal ; la station reprend sur le téléphone si demandé. */
+    private fun disconnectDlna(resume: Boolean) {
+        val session = mediaSession ?: return
+        val main = mainPlayer ?: return
+        val station = dlnaOutput?.disconnect()
+        dlna?.release()
+        dlna = null
+        dlnaOutput = null
+        session.player = NowPlayingPlayer(main)
+        session.setSessionExtras(Bundle.EMPTY)
+        if (resume && station != null) {
+            val playlist = playlistAround(station)
+            main.setMediaItems(playlist.mediaItems, playlist.startIndex, C.TIME_UNSET)
+            main.prepare()
+            main.play()
         }
     }
 

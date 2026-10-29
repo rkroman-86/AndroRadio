@@ -26,8 +26,14 @@ class CastDevices(context: Context) {
     private val castContext: CastContext? = runCatching { CastContext.getSharedInstance(appContext) }.getOrNull()
     private val router: MediaRouter? = if (castContext != null) runCatching { MediaRouter.getInstance(appContext) }.getOrNull() else null
 
+    // Même récepteur que celui configuré pour Cast (DefaultCastOptionsProvider de Media3)
     private val selector = MediaRouteSelector.Builder()
-        .addControlCategory(CastMediaControlIntent.categoryForCast(CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID))
+        .addControlCategory(
+            CastMediaControlIntent.categoryForCast(
+                castContext?.castOptions?.receiverApplicationId
+                    ?: CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID
+            )
+        )
         .build()
 
     val available: Boolean get() = router != null

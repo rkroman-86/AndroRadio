@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** Pendant une diffusion DLNA, les touches de volume pilotent l'appareil distant. */
+    /** Pendant une diffusion (DLNA ou Cast), les touches de volume pilotent l'appareil distant. */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val direction = when (event.keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> 1
@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
             KeyEvent.KEYCODE_VOLUME_MUTE -> 0
             else -> return super.dispatchKeyEvent(event)
         }
-        if (!viewModel.remote.state.value.isActive) return super.dispatchKeyEvent(event)
+        if (!viewModel.player.state.value.isCasting) return super.dispatchKeyEvent(event)
         if (event.action == KeyEvent.ACTION_DOWN) viewModel.onVolumeKey(direction)
         return true // on consomme aussi le relâchement : pas de volume du téléphone en parallèle
     }
