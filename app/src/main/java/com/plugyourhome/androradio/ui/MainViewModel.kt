@@ -263,6 +263,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _search.value = LoadState.Loading
             _search.value = load { api.searchEverywhere(q) }
             searchListState.requestScrollToItem(0) // nouvelle recherche : on repart du haut
+            // Le réseau est revenu : on recharge aussi les stations locales restées en erreur
+            if (_search.value is LoadState.Loaded && _local.value is LoadState.Error) loadLocal()
         }
     }
 

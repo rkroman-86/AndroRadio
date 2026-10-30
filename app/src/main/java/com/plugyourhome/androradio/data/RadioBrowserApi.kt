@@ -68,10 +68,25 @@ class RadioBrowserApi(private val client: OkHttpClient = defaultClient()) {
         }
     }
 
-    /** Essaie chaque serveur jusqu'à obtenir une réponse ; le serveur qui répond passe en tête. */
+    /**
+     * Essaie chaque serveur jusqu'à obtenir une réponse ; le serveur qui répond passe en tête.
+     * Si tous échouent, la liste est oubliée et redécouverte une fois (serveurs remplacés,
+     * certificat expiré…), avec en dernier recours l'adresse générique all.api.radio-browser.info.
+     */
     private suspend fun request(segments: List<String>, params: Map<String, String?>): String {
+        return try {
+            requestOnce(segments, params, servers())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            servers = emptyList() // liste périmée : on la redécouvre
+            requestOnce(segments, params, (servers() + DNS_ENTRY).distinct())
+        }
+    }
+
+    private suspend fun requestOnce(segments: List<String>, params: Map<String, String?>, hosts: List<String>): String {
         var lastError: Exception = IOException("No server")
-        for (host in servers()) {
+        for (host in hosts) {
             val url = HttpUrl.Builder()
                 .scheme("https")
                 .host(host)
