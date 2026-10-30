@@ -1,0 +1,20 @@
+name: Diag Radio Browser
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Servers and search endpoints
+        run: |
+          UA="AndroRadio/1.0.0"
+          echo "== DNS all.api.radio-browser.info"; getent ahosts all.api.radio-browser.info | awk '{print $1}' | sort -u | while read ip; do echo "$ip -> $(getent hosts $ip | awk '{print $2}')"; done
+          echo "== /json/servers"; curl -s -m 15 -A "$UA" https://all.api.radio-browser.info/json/servers; echo
+          for h in $(curl -s -m 15 -A "$UA" https://all.api.radio-browser.info/json/servers | grep -o '"name":"[^"]*"' | cut -d'"' -f4 | sort -u) all.api.radio-browser.info; do
+            for p in "bycountrycodeexact/FR" "byname/rock" "bytag/rock" "bycountry/rock" "bylanguage/rock" "bystate/rock" "bycodec/rock"; do
+              r=$(curl -s -o /tmp/b -w "%{http_code} %{time_total}s" -m 20 -A "$UA" "https://$h/json/stations/$p?order=clickcount&reverse=true&hidebroken=true&limit=60")
+              echo "$h $p -> $r size=$(wc -c </tmp/b) head=$(head -c 80 /tmp/b | tr -d '\n')"
+            done
+          done
