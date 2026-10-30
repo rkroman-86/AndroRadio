@@ -142,9 +142,11 @@ fun HomeScreen(vm: MainViewModel) {
     if (searchOpen) {
         val query by vm.searchQuery.collectAsStateWithLifecycle()
         val results by vm.search.collectAsStateWithLifecycle()
+        val busy by vm.searchBusy.collectAsStateWithLifecycle()
         SearchPage(
             query = query,
             state = results,
+            busy = busy,
             currentUuid = currentUuid,
             onQueryChange = vm::setSearchQuery,
             onSearch = vm::runSearch,

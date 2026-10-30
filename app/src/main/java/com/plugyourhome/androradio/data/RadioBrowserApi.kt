@@ -7,6 +7,12 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.Serializable
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -28,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * - chaque écoute lancée est signalée via /json/url/{uuid} (compteur de clics).
  * Les données de Radio Browser sont dans le domaine public.
  */
-class RadioBrowserApi(private val client: OkHttpClient = defaultClient()) {
+class RadioBrowserApi(private val client: OkHttpClient = apiClient()) {
 
     @Serializable
     private data class Server(val name: String = "")
@@ -80,6 +86,7 @@ class RadioBrowserApi(private val client: OkHttpClient = defaultClient()) {
             throw e
         } catch (e: Exception) {
             servers = emptyList() // liste périmée : on la redécouvre
+            delay(RETRY_PAUSE_MS) // serveur saturé (503) : on lui laisse souffler
             requestOnce(segments, params, (servers() + DNS_ENTRY).distinct())
         }
     }
@@ -133,6 +140,42 @@ class RadioBrowserApi(private val client: OkHttpClient = defaultClient()) {
      * Les résultats sont fusionnés dans cet ordre, sans doublons.
      * Un critère qui échoue n'empêche pas les autres de répondre.
      */
+    /**
+     * Même recherche, mais résultats livrés au fur et à mesure (nom d'abord), avec au plus
+     * 2 requêtes simultanées : un serveur Radio Browser saturé répond mieux qu'à 6 à la fois.
+     * Chaque élément émis est le résultat d'un critère ; null = ce critère a échoué.
+     */
+    fun searchProgressive(text: String, limitPerField: Int = 60): Flow<List<Station>?> = channelFlow {
+        val q = text.trim()
+        if (q.isEmpty()) return@channelFlow
+        val gate = Semaphore(2)
+        searchFields(q).forEach { field ->
+            launch {
+                gate.withPermit {
+                    val result = try {
+                        val term = if (field == "bycountrycodeexact") q.uppercase() else q
+                        stations(listOf("json", "stations", field, term), limitPerField)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        null
+                    }
+                    send(result)
+                }
+            }
+        }
+    }
+
+    private fun searchFields(q: String) = buildList {
+        add("byname")
+        add("bytag")
+        add("bycountry")
+        if (q.length == 2 && q.all { it.isLetter() }) add("bycountrycodeexact")
+        add("bylanguage")
+        add("bystate")
+        add("bycodec")
+    }
+
     suspend fun searchEverywhere(text: String, limitPerField: Int = 60): List<Station> = coroutineScope {
         val q = text.trim()
         if (q.isEmpty()) return@coroutineScope emptyList()
@@ -179,6 +222,13 @@ class RadioBrowserApi(private val client: OkHttpClient = defaultClient()) {
             "nl1.api.radio-browser.info",
             "at1.api.radio-browser.info",
         )
+
+        private const val RETRY_PAUSE_MS = 1_500L
+
+        /** Client de l'annuaire : délai de lecture plus long (serveurs parfois très lents). */
+        fun apiClient(): OkHttpClient = defaultClient().newBuilder()
+            .readTimeout(35, TimeUnit.SECONDS)
+            .build()
 
         fun defaultClient(): OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(8, TimeUnit.SECONDS)

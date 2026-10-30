@@ -7,6 +7,7 @@ import android.os.Looper
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.cast.CastPlayer
+import com.google.android.gms.cast.framework.CastContext
 import androidx.media3.common.C
 import androidx.media3.common.DeviceInfo
 import androidx.media3.common.ForwardingPlayer
@@ -114,12 +115,19 @@ class PlaybackService : MediaSessionService() {
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
 
+    /**
+     * Appli fermée depuis les applis récentes : on arrête tout (téléphone, Cast et DLNA)
+     * et le service s'arrête, comme demandé.
+     */
     override fun onTaskRemoved(rootIntent: Intent?) {
-        val player = mediaSession?.player
-        val casting = player?.deviceInfo?.playbackType == DeviceInfo.PLAYBACK_TYPE_REMOTE
-        if (player == null || (!casting && (!player.playWhenReady || player.mediaItemCount == 0))) {
-            stopSelf()
+        runCatching { dlnaOutput?.disconnect() } // arrête l'appareil DLNA
+        mediaSession?.player?.let { player ->
+            player.stop()
+            player.clearMediaItems()
         }
+        runCatching { CastContext.getSharedInstance(this).sessionManager.endCurrentSession(true) }
+        pauseAllPlayersAndStopSelf()
+        stopSelf()
     }
 
     override fun onDestroy() {

@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.plugyourhome.androradio.AndroRadioApp
 import com.plugyourhome.androradio.data.Station
+import com.plugyourhome.androradio.data.dedupe
 import com.plugyourhome.androradio.data.Track
 import com.plugyourhome.androradio.cast.CastDevice
 import com.plugyourhome.androradio.cast.CastDevices
@@ -252,6 +253,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _searchQuery.value = value
     }
 
+    /** Vrai tant que des critères de recherche sont encore en cours. */
+    private val _searchBusy = MutableStateFlow(false)
+    val searchBusy = _searchBusy.asStateFlow()
+
     fun runSearch() {
         val q = _searchQuery.value.trim()
         searchJob?.cancel()
@@ -260,9 +265,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
         searchJob = viewModelScope.launch {
+            _searchBusy.value = true
             _search.value = LoadState.Loading
-            _search.value = load { api.searchEverywhere(q) }
             searchListState.requestScrollToItem(0) // nouvelle recherche : on repart du haut
+            // Résultats affichés au fur et à mesure (critère par critère), sans doublons
+            val found = mutableListOf<Station>()
+            var anySuccess = false
+            api.searchProgressive(q).collect { part ->
+                if (part != null) {
+                    anySuccess = true
+                    found += part
+                    _search.value = LoadState.Loaded(found.dedupe())
+                }
+            }
+            if (!anySuccess) _search.value = LoadState.Error
+            _searchBusy.value = false
             // Le réseau est revenu : on recharge aussi les stations locales restées en erreur
             if (_search.value is LoadState.Loaded && _local.value is LoadState.Error) loadLocal()
         }

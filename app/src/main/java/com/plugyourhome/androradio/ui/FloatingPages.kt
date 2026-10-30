@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -234,6 +235,7 @@ fun FavoritesPage(
 fun SearchPage(
     query: String,
     state: LoadState,
+    busy: Boolean = false,
     currentUuid: String?,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
@@ -289,6 +291,8 @@ fun SearchPage(
                     CenterMessage(stringResource(R.string.no_results))
                 } else {
                     Column(Modifier.fillMaxSize()) {
+                        // D'autres critères arrivent encore
+                        if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 20.dp))
                         Text(
                             stringResource(R.string.results_count, state.stations.size),
                             style = MaterialTheme.typography.labelMedium,
