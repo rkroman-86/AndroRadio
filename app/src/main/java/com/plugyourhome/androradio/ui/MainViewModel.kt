@@ -69,11 +69,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Volume du curseur : celui de l'appareil distant pendant une diffusion. */
     val volumeLevel: StateFlow<Float> = combine(volume.level, player.state) { v, p ->
-        if (p.isCasting) p.castVolume ?: 0.5f else v
+        when {
+            p.dlnaId != null -> p.dlnaVolume ?: 0.5f
+            p.isCasting -> p.castVolume ?: 0.5f
+            else -> v
+        }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, volume.level.value)
 
     fun setVolume(value: Float) {
-        if (player.state.value.isCasting) player.setCastVolume(value) else volume.set(value)
+        val p = player.state.value
+        when {
+            p.dlnaId != null -> player.setDlnaVolume(value)
+            p.isCasting -> player.setCastVolume(value)
+            else -> volume.set(value)
+        }
     }
 
     /**
@@ -81,12 +90,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * Renvoie false hors diffusion (le téléphone garde alors son comportement normal).
      */
     fun onVolumeKey(direction: Int): Boolean {
-        if (!player.state.value.isCasting) return false
+        val p = player.state.value
+        if (!p.isCasting && p.dlnaId == null) return false
         val next = when (direction) {
             0 -> 0f // touche « muet »
             else -> (volumeLevel.value + direction * VOLUME_STEP).coerceIn(0f, 1f)
         }
-        player.setCastVolume(next)
+        setVolume(next)
         return true
     }
 

@@ -35,6 +35,8 @@ data class PlayerUiState(
     /** Appareil DLNA qui joue (géré par le service), null sinon. */
     val dlnaName: String? = null,
     val dlnaId: String? = null,
+    /** Volume réel de l'appareil DLNA (0..1), si connu. */
+    val dlnaVolume: Float? = null,
 ) {
     val isActive: Boolean get() = isPlaying || isBuffering
 }
@@ -116,6 +118,14 @@ class PlayerConnection(context: Context, scope: CoroutineScope) {
         )
     }
 
+    /** Volume de l'appareil DLNA (0..1), envoyé directement au service. */
+    fun setDlnaVolume(value: Float) = withController {
+        sendCustomCommand(
+            SessionCommand(DlnaCommands.SET_VOLUME, Bundle.EMPTY),
+            Bundle().apply { putFloat(DlnaCommands.KEY_VOLUME, value.coerceIn(0f, 1f)) },
+        )
+    }
+
     /** Volume de l'appareil Cast (0..1). */
     fun setCastVolume(value: Float) = withController {
         val info = deviceInfo
@@ -150,6 +160,8 @@ class PlayerConnection(context: Context, scope: CoroutineScope) {
             isCasting = player.deviceInfo.playbackType == DeviceInfo.PLAYBACK_TYPE_REMOTE,
             dlnaName = (player as? MediaController)?.sessionExtras?.getString(DlnaCommands.EXTRA_OUTPUT_NAME),
             dlnaId = (player as? MediaController)?.sessionExtras?.getString(DlnaCommands.EXTRA_OUTPUT_ID),
+            dlnaVolume = (player as? MediaController)?.sessionExtras
+                ?.getFloat(DlnaCommands.EXTRA_VOLUME, -1f)?.takeIf { it >= 0f },
             castVolume = player.deviceInfo.takeIf { it.playbackType == DeviceInfo.PLAYBACK_TYPE_REMOTE && it.maxVolume > it.minVolume }
                 ?.let { (player.deviceVolume - it.minVolume).toFloat() / (it.maxVolume - it.minVolume) },
             isBuffering = player.playWhenReady && player.playbackState == Player.STATE_BUFFERING,

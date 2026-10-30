@@ -40,6 +40,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.guava.future
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
@@ -62,6 +64,7 @@ class PlaybackService : MediaSessionService() {
     /** Diffusion DLNA en cours (null sinon) : son lecteur remplace mainPlayer dans la session. */
     private var dlna: DlnaPlayer? = null
     private var dlnaOutput: RemoteOutput? = null
+    private var dlnaVolumeJob: kotlinx.coroutines.Job? = null
 
     private val app get() = application as AndroRadioApp
     private val store get() = app.store
@@ -211,6 +214,7 @@ class PlaybackService : MediaSessionService() {
                             MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
                                 .add(SessionCommand(DlnaCommands.CONNECT, Bundle.EMPTY))
                                 .add(SessionCommand(DlnaCommands.DISCONNECT, Bundle.EMPTY))
+                                .add(SessionCommand(DlnaCommands.SET_VOLUME, Bundle.EMPTY))
                                 .build()
                         )
                     }
@@ -239,6 +243,8 @@ class PlaybackService : MediaSessionService() {
                     connectDlna(device, DlnaCommands.stationFrom(args))
                 }
                 DlnaCommands.DISCONNECT -> disconnectDlna(args.getBoolean(DlnaCommands.KEY_RESUME, false))
+                // Volume réglé depuis l'appli (curseur, touches) : même chemin que l'écran verrouillé
+                DlnaCommands.SET_VOLUME -> dlnaOutput?.setVolume(args.getFloat(DlnaCommands.KEY_VOLUME, 0.5f))
                 else -> return super.onCustomCommand(session, controller, customCommand, args)
             }
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
@@ -316,7 +322,14 @@ class PlaybackService : MediaSessionService() {
             )
         }
         session.player = NowPlayingPlayer(player)
-        session.setSessionExtras(DlnaCommands.extrasFor(device))
+        session.setSessionExtras(DlnaCommands.extrasFor(device, null))
+        // L'appli suit le volume réel de l'appareil via les extras de session
+        dlnaVolumeJob?.cancel()
+        dlnaVolumeJob = serviceScope.launch {
+            output.state.map { it.volume }.distinctUntilChanged().collect { v ->
+                if (dlnaOutput === output) session.setSessionExtras(DlnaCommands.extrasFor(device, v))
+            }
+        }
     }
 
     /** Revient au lecteur normal ; la station reprend sur le téléphone si demandé. */
@@ -328,6 +341,8 @@ class PlaybackService : MediaSessionService() {
         dlna = null
         dlnaOutput = null
         session.player = NowPlayingPlayer(main)
+        dlnaVolumeJob?.cancel()
+        dlnaVolumeJob = null
         session.setSessionExtras(Bundle.EMPTY)
         if (resume && station != null) {
             val playlist = playlistAround(station)

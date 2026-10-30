@@ -32,7 +32,8 @@ class MainActivity : ComponentActivity() {
             KeyEvent.KEYCODE_VOLUME_MUTE -> 0
             else -> return super.dispatchKeyEvent(event)
         }
-        if (!viewModel.player.state.value.isCasting) return super.dispatchKeyEvent(event)
+        val p = viewModel.player.state.value
+        if (!p.isCasting && p.dlnaId == null) return super.dispatchKeyEvent(event)
         if (event.action == KeyEvent.ACTION_DOWN) viewModel.onVolumeKey(direction)
         return true // on consomme aussi le relâchement : pas de volume du téléphone en parallèle
     }
