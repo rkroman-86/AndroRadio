@@ -9,6 +9,8 @@ jobs:
     steps:
       - name: Servers and search endpoints
         run: |
+          set +e
+          exec > >(tee /tmp/out.txt) 2>&1
           UA="AndroRadio/1.0.0"
           echo "== DNS all.api.radio-browser.info"; getent ahosts all.api.radio-browser.info | awk '{print $1}' | sort -u | while read ip; do echo "$ip -> $(getent hosts $ip | awk '{print $2}')"; done
           echo "== /json/servers"; curl -s -m 15 -A "$UA" https://all.api.radio-browser.info/json/servers; echo
@@ -18,3 +20,6 @@ jobs:
               echo "$h $p -> $r size=$(wc -c </tmp/b) head=$(head -c 80 /tmp/b | tr -d '\n')"
             done
           done
+          sleep 1
+          # Résultat en annotation (lisible via l'API)
+          echo "::notice title=diag::$(sed 's/%/%25/g' /tmp/out.txt | awk '{printf "%s%%0A", $0}')"
