@@ -5,7 +5,7 @@ UN ÉCRAN, CINQ BANDES
 • Derniers écoutés : vos 10 dernières stations
 • Favoris : 20 cases, à réordonner par glisser-déposer
 • Stations locales : les stations populaires de votre pays, à renouveler d'un geste
-• Commandes : un seul bouton Lecture/Stop, Favoris, Recherche
+• Commandes : bouton Lecture/Stop, volume, diffusion
 
 TROUVEZ N'IMPORTE QUELLE STATION
 Recherchez parmi des dizaines de milliers de stations par nom, genre, pays, langue, région ou codec. Les doublons sont retirés automatiquement.

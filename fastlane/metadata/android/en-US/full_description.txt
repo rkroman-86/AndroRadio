@@ -5,7 +5,7 @@ ONE SCREEN, FIVE BANDS
 • Recently played: your last 10 stations
 • Favorites: 20 slots, reorder them by drag and drop
 • Local stations: popular stations of your country, refresh for more
-• Controls: one Play/Stop button, Favorites, Search
+• Controls: Play/Stop button, volume, Cast
 
 FIND ANY STATION
 Search tens of thousands of stations by name, genre, country, language, region or codec. Duplicates are removed automatically.
