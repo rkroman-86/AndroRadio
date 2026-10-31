@@ -52,6 +52,8 @@ android {
                 "proguard-rules.pro"
             )
             if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
+            // Symboles du code natif des bibliothèques, inclus dans l'AAB pour la Play Console
+            ndk { debugSymbolLevel = "SYMBOL_TABLE" }
         }
         debug {
             signingConfig = signingConfigs.getByName("debug")
