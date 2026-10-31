@@ -74,7 +74,7 @@ Ne pas utiliser de captures réelles avec de vraies stations (logos, pochettes e
 | Politique de confidentialité | URL de `PRIVACY.md` (ci-dessus) |
 | Publicités | Non, l'appli ne contient pas de publicité |
 | Accès à l'appli | Toutes les fonctionnalités sont accessibles sans restriction |
-| Public cible | 18 ans et plus (les flux sont diffusés par des tiers, non contrôlés) |
+| Public cible | 13-15, 16-17 et 18 ans et plus. Ne pas cocher de tranche de moins de 13 ans (programme « Familles » : SDK Cast et contenus non modérés incompatibles) |
 | Appli d'actualités | Non |
 | Fonctionnalités financières / santé / gouvernement | Aucune |
 | Types de service de premier plan | `mediaPlayback` : « Lecture audio continue d'une radio choisie par l'utilisateur, écran éteint, avec commandes dans la notification. » Préparer une courte vidéo (YouTube non répertoriée) : lancer une station, verrouiller l'écran, la lecture continue, commandes dans la notification. |
