@@ -51,7 +51,7 @@ Tout ce qui est préparé dans le dépôt, et les réponses à donner dans la Pl
 
 - **Nom de l'appli** : `AndroRadio – Internet Radio` (fr : `AndroRadio – Radio Internet`, ru : `AndroRadio – интернет-радио`)
 - **Catégorie** : Musique et audio
-- **Coordonnées** : adresse e-mail de contact (obligatoire, visible publiquement), site web optionnel (le dépôt GitHub)
+- **Coordonnées** : e-mail `rk.kps06@gmail.com` (visible publiquement), site web : https://github.com/rkroman-86/AndroRadio
 - **Langue par défaut** : anglais (en-US) ; ajouter les traductions fr-FR et ru-RU depuis `fastlane/`.
 
 ### Captures d'écran — déjà générées, sans aucune marque de tiers

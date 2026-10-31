@@ -3,7 +3,7 @@
 _Last updated: 29 October 2026_
 
 Publisher: **plug-your-home** — App: **AndroRadio** (`com.plugyourhome.androradio`)
-Contact: [GitHub issues](https://github.com/rkroman-86/AndroRadio/issues)
+Contact: [rk.kps06@gmail.com](mailto:rk.kps06@gmail.com) · [GitHub issues](https://github.com/rkroman-86/AndroRadio/issues)
 
 ---
 
