@@ -6,10 +6,14 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureScreenRoboImage
+import com.plugyourhome.androradio.ui.CastPage
 import com.plugyourhome.androradio.ui.FavoritesPage
 import com.plugyourhome.androradio.ui.HomeBands
 import com.plugyourhome.androradio.ui.LoadState
 import com.plugyourhome.androradio.ui.LocalArtOverride
+import com.plugyourhome.androradio.ui.OutputKind
+import com.plugyourhome.androradio.ui.OutputList
+import com.plugyourhome.androradio.ui.OutputTarget
 import com.plugyourhome.androradio.ui.SearchPage
 import com.plugyourhome.androradio.ui.theme.AndroRadioTheme
 import org.junit.Rule
@@ -23,6 +27,7 @@ import java.util.Locale
  * Génère les captures d'écran de la fiche Google Play, dans les 3 langues,
  * avec des stations fictives (aucune marque de tiers).
  *
+ * Scènes : accueil, favoris, recherche, « Diffuser vers… ».
  * Lancement : ./gradlew recordRoborazziDebug
  * Résultat :  fastlane/metadata/android/<langue>/images/<format>/
  */
@@ -87,6 +92,28 @@ abstract class StoreScreenshots(private val folder: String) {
         )
     }
 
+    /** Appareils fictifs, noms génériques traduits (aucune marque). */
+    @Composable
+    private fun CastScene() {
+        val names = when (LocalConfiguration.current.locales[0].language) {
+            "fr" -> listOf("TV du salon", "Enceinte cuisine", "Ampli hi-fi", "Enceinte terrasse")
+            "ru" -> listOf("ТВ в гостиной", "Колонка на кухне", "Hi-Fi усилитель", "Колонка на террасе")
+            else -> listOf("Living room TV", "Kitchen speaker", "Hi-Fi amplifier", "Terrace speaker")
+        }
+        val targets = listOf(
+            OutputTarget("cast:tv", names[0], OutputKind.CAST),
+            OutputTarget("cast:kitchen", names[1], OutputKind.CAST),
+            OutputTarget("dlna:amp", names[2], OutputKind.DLNA),
+            OutputTarget("dlna:terrace", names[3], OutputKind.DLNA),
+        )
+        Home()
+        CastPage(
+            outputs = OutputList(searching = false, targets = targets),
+            currentId = "dlna:amp",
+            onPhone = {}, onDevice = {}, onRefresh = {}, onClose = {},
+        )
+    }
+
     @Test @Config(qualifiers = "+en-rUS")
     fun home_en() = shoot("en-US", 1, "home") { Home() }
 
@@ -113,6 +140,15 @@ abstract class StoreScreenshots(private val folder: String) {
 
     @Test @Config(qualifiers = "+ru-rRU")
     fun search_ru() = shoot("ru-RU", 3, "search") { SearchScene() }
+
+    @Test @Config(qualifiers = "+en-rUS")
+    fun cast_en() = shoot("en-US", 4, "cast") { CastScene() }
+
+    @Test @Config(qualifiers = "+fr-rFR")
+    fun cast_fr() = shoot("fr-FR", 4, "cast") { CastScene() }
+
+    @Test @Config(qualifiers = "+ru-rRU")
+    fun cast_ru() = shoot("ru-RU", 4, "cast") { CastScene() }
 }
 
 // Formats demandés par Google Play (rapport largeur/hauteur ≤ 2)
