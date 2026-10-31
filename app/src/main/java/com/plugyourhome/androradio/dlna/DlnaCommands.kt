@@ -10,6 +10,8 @@ object DlnaCommands {
     const val CONNECT = "com.plugyourhome.androradio.DLNA_CONNECT"
     const val DISCONNECT = "com.plugyourhome.androradio.DLNA_DISCONNECT"
     const val SET_VOLUME = "com.plugyourhome.androradio.DLNA_SET_VOLUME"
+    /** Lance une station : le service charge la liste et démarre la lecture en une seule fois. */
+    const val PLAY_STATION = "com.plugyourhome.androradio.PLAY_STATION"
     const val KEY_VOLUME = "volume"
 
     const val KEY_RESUME = "resume"
@@ -31,6 +33,10 @@ object DlnaCommands {
         putString(KEY_AV, device.avTransportUrl)
         putString(KEY_RC, device.renderingControlUrl)
         station?.let { putString(KEY_STATION, AppJson.encodeToString(it)) }
+    }
+
+    fun playArgs(station: Station) = Bundle().apply {
+        putString(KEY_STATION, AppJson.encodeToString(station))
     }
 
     fun deviceFrom(args: Bundle): DlnaDevice? {

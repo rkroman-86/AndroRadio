@@ -83,10 +83,13 @@ class PlayerConnection(context: Context, scope: CoroutineScope) {
         controller?.action() ?: run { pending = action }
     }
 
+    /**
+     * Lance une station. Le service enchaîne lui-même chargement, préparation et lecture
+     * sur le lecteur actif (téléphone, Cast ou DLNA) : aucune commande ne peut se perdre
+     * ou arriver dans le désordre quand on change de station pendant la lecture.
+     */
     fun play(station: Station) = withController {
-        setMediaItem(station.toMediaItem())
-        prepare()
-        this.play()
+        sendCustomCommand(SessionCommand(DlnaCommands.PLAY_STATION, Bundle.EMPTY), DlnaCommands.playArgs(station))
     }
 
     fun togglePlayPause() = withController {

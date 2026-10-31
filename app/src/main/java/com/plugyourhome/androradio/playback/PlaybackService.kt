@@ -223,6 +223,7 @@ class PlaybackService : MediaSessionService() {
                                 .add(SessionCommand(DlnaCommands.CONNECT, Bundle.EMPTY))
                                 .add(SessionCommand(DlnaCommands.DISCONNECT, Bundle.EMPTY))
                                 .add(SessionCommand(DlnaCommands.SET_VOLUME, Bundle.EMPTY))
+                                .add(SessionCommand(DlnaCommands.PLAY_STATION, Bundle.EMPTY))
                                 .build()
                         )
                     }
@@ -249,6 +250,11 @@ class PlaybackService : MediaSessionService() {
                     val device = DlnaCommands.deviceFrom(args)
                         ?: return Futures.immediateFuture(SessionResult(SessionError.ERROR_BAD_VALUE))
                     connectDlna(device, DlnaCommands.stationFrom(args))
+                }
+                DlnaCommands.PLAY_STATION -> {
+                    val station = DlnaCommands.stationFrom(args)
+                        ?: return Futures.immediateFuture(SessionResult(SessionError.ERROR_BAD_VALUE))
+                    playStation(station)
                 }
                 DlnaCommands.DISCONNECT -> disconnectDlna(args.getBoolean(DlnaCommands.KEY_RESUME, false))
                 // Volume réglé depuis l'appli (curseur, touches) : même chemin que l'écran verrouillé
@@ -358,6 +364,19 @@ class PlaybackService : MediaSessionService() {
             main.prepare()
             main.play()
         }
+    }
+
+    /**
+     * Change de station sur le lecteur actif de la session. Sur le téléphone ou Cast,
+     * le flux en cours est d'abord arrêté, puis la nouvelle liste est chargée et lancée.
+     */
+    private fun playStation(station: Station) {
+        val player = mediaSession?.player ?: return
+        val playlist = playlistAround(station)
+        if (dlna == null) player.stop()
+        player.setMediaItems(playlist.mediaItems, playlist.startIndex, C.TIME_UNSET)
+        player.prepare()
+        player.play()
     }
 
     /** Favorites dans leur ordre ; une station hors favoris est placée en tête. */
