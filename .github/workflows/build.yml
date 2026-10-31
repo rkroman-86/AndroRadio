@@ -83,6 +83,21 @@ jobs:
           ANDRORADIO_KEY_PASSWORD: ${{ secrets.ANDRORADIO_KEY_PASSWORD }}
         run: ./gradlew --no-daemon bundleRelease assembleRelease
 
+      # .aab pour la Play Console, déposé dans une release « brouillon » (visible seulement par le propriétaire)
+      - name: Publish Play bundle (draft release)
+        if: steps.keystore.outputs.path != '' && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          C=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
+          TAG="play-v$V-$C"
+          cp app/build/outputs/bundle/release/app-release.aab "AndroRadio-$V-$C.aab"
+          gh release delete "$TAG" --yes || true
+          gh release create "$TAG" "AndroRadio-$V-$C.aab" --draft --target "${{ github.sha }}" \
+            --title "AndroRadio $V ($C) — Play Console" \
+            --notes "Bundle signé avec la clé d'importation, à envoyer dans la Play Console."
+
       - uses: actions/upload-artifact@v4
         if: steps.keystore.outputs.path != ''
         with:
