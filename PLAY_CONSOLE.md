@@ -123,9 +123,8 @@ ce SDK collecte des **statistiques anonymisées** sur la diffusion (découverte,
 envoyées à Google, chiffrées en transit, sans partage avec des tiers, sans possibilité de refus ni de suppression.
 
 À ajouter dans le formulaire, en plus de l'historique des recherches :
-- **Activité dans l'appli → Autres actions de l'utilisateur** : collectée (par le SDK Cast), non partagée,
-  finalités « Statistiques » et « Fonctionnalité de l'appli », collecte obligatoire, chiffrée en transit.
-- **Infos et performances de l'appli → Diagnostics** : collectée (par le SDK Cast), non partagée, finalité « Statistiques ».
+- **Activité dans l'appli → Interactions avec l'appli** : collectée (par le SDK Cast), non partagée,
+  non éphémère, collecte obligatoire, finalités « Statistiques » et « Fonctionnalités de l'appli ».
 
 Récepteur utilisé : le récepteur par défaut de Google (`DefaultCastOptionsProvider`), aucune appli réceptrice à enregistrer.
 
