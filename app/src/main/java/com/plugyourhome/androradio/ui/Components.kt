@@ -334,13 +334,18 @@ private fun setAppLanguage(context: android.content.Context, tag: String?) {
 
 /** Petite icône de la colonne de droite (bande « En cours »). */
 @Composable
-fun SideIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
-    IconButton(onClick = onClick, modifier = Modifier.size(SIDE_ICON)) {
+fun SideIcon(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    size: Dp = SIDE_ICON,
+) {
+    IconButton(onClick = onClick, modifier = Modifier.size(size)) {
         Icon(
             icon,
             contentDescription = label,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(size * 0.55f),
         )
     }
 }

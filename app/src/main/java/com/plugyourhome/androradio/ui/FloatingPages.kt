@@ -70,7 +70,7 @@ import com.plugyourhome.androradio.data.Station
 
 /** Cadre commun des pages flottantes (favoris, recherche). */
 @Composable
-private fun FloatingPage(
+internal fun FloatingPage(
     title: String,
     onClose: () -> Unit,
     content: @Composable ColumnScope.() -> Unit,
@@ -322,7 +322,7 @@ fun SearchPage(
 }
 
 @Composable
-private fun SearchResultRow(
+internal fun SearchResultRow(
     station: Station,
     isCurrent: Boolean,
     onPlay: () -> Unit,

@@ -54,4 +54,16 @@
     <string name="cast_searching">Looking for devices on your Wi-Fi…</string>
     <string name="cast_none">No device found. Check that it is on and connected to the same Wi-Fi.</string>
     <string name="cast_hint">Devices on your Wi-Fi: Chromecast / Google TV (Cast) and DLNA amplifiers, speakers, TVs.</string>
+    <!-- Tuner « Tour du monde » -->
+    <string name="geo_title">Around the world</string>
+    <string name="geo_continent">Continent</string>
+    <string name="geo_country">Country</string>
+    <string name="geo_region">Region / city</string>
+    <string name="geo_all">All</string>
+    <string name="continent_europe">Europe</string>
+    <string name="continent_africa">Africa</string>
+    <string name="continent_asia">Asia</string>
+    <string name="continent_north_america">North America</string>
+    <string name="continent_south_america">South America</string>
+    <string name="continent_oceania">Oceania</string>
 </resources>

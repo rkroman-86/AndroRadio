@@ -5,7 +5,12 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.plugyourhome.androradio.AndroRadioApp
+import com.plugyourhome.androradio.data.Continent
+import com.plugyourhome.androradio.data.GeoCountry
+import com.plugyourhome.androradio.data.GeoRegion
 import com.plugyourhome.androradio.data.Station
+import com.plugyourhome.androradio.data.regionKey
+import com.plugyourhome.androradio.data.regions
 import com.plugyourhome.androradio.data.dedupe
 import com.plugyourhome.androradio.data.Track
 import com.plugyourhome.androradio.cast.CastDevice
@@ -339,6 +344,121 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _searchOpen.value = false
     }
 
+    // --- Tuner « Tour du monde » : continent → pays → région/ville → stations ---
+
+    private val _geoOpen = MutableStateFlow(false)
+    val geoOpen = _geoOpen.asStateFlow()
+
+    private val _geo = MutableStateFlow(
+        GeoUi(continent = Continent.of(countryCode)?.ordinal ?: Continent.EUROPE.ordinal),
+    )
+    val geo = _geo.asStateFlow()
+
+    /** Tous les pays de l'annuaire, chargés une fois à la première ouverture. */
+    private var allCountries: List<GeoCountry>? = null
+
+    /** Stations déjà chargées par pays : revenir sur un pays est instantané. */
+    private val countryStations = HashMap<String, List<Station>>()
+    private var geoJob: Job? = null
+
+    fun openGeo() {
+        _geoOpen.value = true
+        if (allCountries == null) loadCountries()
+    }
+
+    fun closeGeo() {
+        _geoOpen.value = false
+    }
+
+    fun retryGeo() {
+        if (allCountries == null) loadCountries() else loadGeoCountry()
+    }
+
+    private fun loadCountries() {
+        geoJob?.cancel()
+        geoJob = viewModelScope.launch {
+            _geo.value = _geo.value.copy(countries = null, countriesError = false)
+            try {
+                allCountries = api.countries()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _geo.value = _geo.value.copy(countriesError = true)
+                return@launch
+            }
+            // Première ouverture : le pays du téléphone est présélectionné
+            selectGeoContinent(_geo.value.continent, preferCode = countryCode)
+        }
+    }
+
+    /** Pays du continent, par ordre alphabétique (comme sur un cadran). */
+    private fun countriesOf(continent: Continent): List<GeoCountry> {
+        val collator = java.text.Collator.getInstance()
+        return allCountries.orEmpty()
+            .filter { Continent.of(it.code) == continent }
+            .sortedWith { a, b -> collator.compare(a.name, b.name) }
+    }
+
+    fun selectGeoContinent(index: Int, preferCode: String? = null) {
+        val continent = Continent.entries.getOrNull(index) ?: return
+        val list = countriesOf(continent)
+        // Sans préférence : le pays qui a le plus de stations
+        val country = list.indexOfFirst { it.code == preferCode }.takeIf { it >= 0 }
+            ?: list.indices.maxByOrNull { list[it].stations } ?: 0
+        _geo.value = _geo.value.copy(continent = index, countries = list, countryIndex = country)
+        loadGeoCountry()
+    }
+
+    fun selectGeoCountry(index: Int) {
+        val g = _geo.value
+        if (g.countries.isNullOrEmpty() || index == g.countryIndex && g.regions != null) return
+        _geo.value = g.copy(countryIndex = index.coerceIn(g.countries.indices))
+        loadGeoCountry()
+    }
+
+    fun selectGeoRegion(index: Int) {
+        val g = _geo.value
+        val regions = g.regions ?: return
+        val code = g.selectedCountry?.code ?: return
+        val all = countryStations[code] ?: return
+        val region = regions.getOrNull(index) ?: return
+        val stations = if (region.key == null) all else all.filter { regionKey(it.state) == region.key }
+        _geo.value = g.copy(regionIndex = index, stations = LoadState.Loaded(stations))
+    }
+
+    /** Charge (ou reprend du cache) les stations du pays choisi, puis ses régions. */
+    private fun loadGeoCountry() {
+        geoJob?.cancel()
+        val code = _geo.value.selectedCountry?.code
+        if (code == null) {
+            _geo.value = _geo.value.copy(regions = emptyList(), regionIndex = 0, stations = LoadState.Loaded(emptyList()))
+            return
+        }
+        countryStations[code]?.let { applyGeoCountry(code, it); return }
+        _geo.value = _geo.value.copy(regions = null, regionIndex = 0, stations = LoadState.Loading)
+        geoJob = viewModelScope.launch {
+            val stations = try {
+                api.topOfCountry(code, GEO_COUNTRY_LIMIT)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _geo.value = _geo.value.copy(regions = emptyList(), stations = LoadState.Error)
+                return@launch
+            }
+            countryStations[code] = stations
+            if (_geo.value.selectedCountry?.code == code) applyGeoCountry(code, stations)
+        }
+    }
+
+    private fun applyGeoCountry(code: String, stations: List<Station>) {
+        val all = GeoRegion(null, "", stations.size) // « Toutes » : libellé traduit par l'interface
+        _geo.value = _geo.value.copy(
+            regions = listOf(all) + stations.regions(),
+            regionIndex = 0,
+            stations = LoadState.Loaded(stations),
+        )
+    }
+
     override fun onCleared() {
         cast.release()
         player.release()
@@ -350,7 +470,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         const val VOLUME_STEP = 0.05f
         const val LOCAL_COUNT = 10
         const val LOCAL_POOL = 60
+        /** Stations chargées par pays dans le tuner : les plus écoutées. */
+        const val GEO_COUNTRY_LIMIT = 500
     }
+}
+
+/**
+ * État du tuner « Tour du monde ».
+ * countries / regions null = en cours de chargement.
+ */
+data class GeoUi(
+    val continent: Int,
+    val countries: List<GeoCountry>? = null,
+    val countriesError: Boolean = false,
+    val countryIndex: Int = 0,
+    val regions: List<GeoRegion>? = null,
+    val regionIndex: Int = 0,
+    val stations: LoadState = LoadState.Idle,
+) {
+    val selectedCountry: GeoCountry? get() = countries?.getOrNull(countryIndex)
 }
 
 data class FavoritesSheet(val stationToSave: Station?)
