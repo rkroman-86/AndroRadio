@@ -361,6 +361,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val countryStations = HashMap<String, List<Station>>()
     private var geoJob: Job? = null
 
+    /** Vue du tuner mémorisée : false = cadrans rétro (par défaut), true = listes modernes. */
+    private val settings = application.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
+    private val _geoModern = MutableStateFlow(settings.getBoolean(KEY_GEO_MODERN, false))
+    val geoModern = _geoModern.asStateFlow()
+
+    fun setGeoModern(modern: Boolean) {
+        _geoModern.value = modern
+        settings.edit().putBoolean(KEY_GEO_MODERN, modern).apply()
+    }
+
     fun openGeo() {
         _geoOpen.value = true
         if (allCountries == null) loadCountries()
@@ -472,6 +482,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         const val LOCAL_POOL = 60
         /** Stations chargées par pays dans le tuner : les plus écoutées. */
         const val GEO_COUNTRY_LIMIT = 500
+        private const val KEY_GEO_MODERN = "geo_modern"
     }
 }
 

@@ -144,8 +144,11 @@ fun HomeScreen(vm: MainViewModel) {
     val geoOpen by vm.geoOpen.collectAsStateWithLifecycle()
     if (geoOpen) {
         val geo by vm.geo.collectAsStateWithLifecycle()
+        val geoModern by vm.geoModern.collectAsStateWithLifecycle()
         TunerPage(
             geo = geo,
+            modern = geoModern,
+            onModern = vm::setGeoModern,
             currentUuid = currentUuid,
             onContinent = { vm.selectGeoContinent(it) },
             onCountry = vm::selectGeoCountry,

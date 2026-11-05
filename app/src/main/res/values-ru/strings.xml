@@ -65,4 +65,6 @@
     <string name="continent_north_america">Северная Америка</string>
     <string name="continent_south_america">Южная Америка</string>
     <string name="continent_oceania">Океания</string>
+    <string name="geo_style_retro">Ретро</string>
+    <string name="geo_style_modern">Современный</string>
 </resources>
