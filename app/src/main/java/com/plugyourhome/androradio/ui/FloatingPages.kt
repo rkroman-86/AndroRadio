@@ -73,6 +73,7 @@ import com.plugyourhome.androradio.data.Station
 internal fun FloatingPage(
     title: String,
     onClose: () -> Unit,
+    actions: @Composable () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Dialog(
@@ -96,8 +97,11 @@ internal fun FloatingPage(
                     Text(
                         title,
                         style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
+                    actions()
                     IconButton(onClick = onClose) {
                         Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.close))
                     }
