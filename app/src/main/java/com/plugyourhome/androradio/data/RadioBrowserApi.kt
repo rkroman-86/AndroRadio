@@ -39,6 +39,13 @@ class RadioBrowserApi(private val client: OkHttpClient = apiClient()) {
     @Serializable
     private data class Server(val name: String = "")
 
+    @Serializable
+    private data class CountryEntry(
+        val name: String = "",
+        @kotlinx.serialization.SerialName("iso_3166_1") val code: String = "",
+        @kotlinx.serialization.SerialName("stationcount") val stationCount: Int = 0,
+    )
+
     @Volatile
     private var servers: List<String> = emptyList()
 
@@ -133,6 +140,28 @@ class RadioBrowserApi(private val client: OkHttpClient = apiClient()) {
         else stations(listOf("json", "stations", "bycountrycodeexact", countryCode.uppercase()), fetch)
         return list.dedupe().take(limit)
     }
+
+    /**
+     * Pays de l'annuaire avec leur nombre de stations (tuner « Tour du monde »).
+     * Un même code peut revenir sous plusieurs noms : les comptes sont additionnés.
+     * Le nom est traduit dans la langue de l'appli quand Android le connaît.
+     */
+    suspend fun countries(): List<GeoCountry> =
+        AppJson.decodeFromString<List<CountryEntry>>(request(listOf("json", "countries"), mapOf("hidebroken" to "true")))
+            .filter { it.code.length == 2 && it.stationCount > 0 }
+            .groupBy { it.code.uppercase() }
+            .map { (code, list) ->
+                val local = java.util.Locale("", code).displayCountry
+                GeoCountry(
+                    code = code,
+                    name = local.takeIf { it.isNotBlank() && it != code } ?: list.first().name,
+                    stations = list.sumOf { it.stationCount },
+                )
+            }
+
+    /** Les stations les plus écoutées d'un pays, sans doublons (tuner : régions et liste). */
+    suspend fun topOfCountry(countryCode: String, limit: Int): List<Station> =
+        stations(listOf("json", "stations", "bycountrycodeexact", countryCode.uppercase()), limit).dedupe()
 
     /**
      * Recherche un texte dans chaque critère de Radio Browser, l'un après l'autre :

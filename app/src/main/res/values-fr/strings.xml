@@ -53,4 +53,16 @@
     <string name="cast_searching">Recherche d’appareils sur votre Wi-Fi…</string>
     <string name="cast_none">Aucun appareil trouvé. Vérifiez qu’il est allumé et sur le même Wi-Fi.</string>
     <string name="cast_hint">Appareils de votre Wi-Fi : Chromecast / Google TV (Cast) et amplis, enceintes, TV DLNA.</string>
+    <!-- Tuner « Tour du monde » -->
+    <string name="geo_title">Tour du monde</string>
+    <string name="geo_continent">Continent</string>
+    <string name="geo_country">Pays</string>
+    <string name="geo_region">Région / ville</string>
+    <string name="geo_all">Toutes</string>
+    <string name="continent_europe">Europe</string>
+    <string name="continent_africa">Afrique</string>
+    <string name="continent_asia">Asie</string>
+    <string name="continent_north_america">Amérique du Nord</string>
+    <string name="continent_south_america">Amérique du Sud</string>
+    <string name="continent_oceania">Océanie</string>
 </resources>

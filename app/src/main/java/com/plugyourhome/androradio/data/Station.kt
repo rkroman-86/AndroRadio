@@ -31,6 +31,8 @@ data class Station(
     val tags: String = "",
     val country: String = "",
     @SerialName("countrycode") val countryCode: String = "",
+    /** Région ou ville, texte libre saisi par les contributeurs (souvent vide). */
+    val state: String = "",
     val language: String = "",
     val codec: String = "",
     val bitrate: Int = 0,

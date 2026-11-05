@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.automirrored.filled.VolumeDown
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
@@ -99,6 +100,7 @@ fun HomeScreen(vm: MainViewModel) {
         onPlayStop = vm::togglePlayStop,
         onFavorites = { vm.openFavorites() },
         onSearch = vm::openSearch,
+        onWorld = vm::openGeo,
         onAbout = vm::openAbout,
         volume = volume,
         onVolumeChange = vm::setVolume,
@@ -138,6 +140,22 @@ fun HomeScreen(vm: MainViewModel) {
 
     val aboutOpen by vm.aboutOpen.collectAsStateWithLifecycle()
     if (aboutOpen) AboutPage(onClose = vm::closeAbout)
+
+    val geoOpen by vm.geoOpen.collectAsStateWithLifecycle()
+    if (geoOpen) {
+        val geo by vm.geo.collectAsStateWithLifecycle()
+        TunerPage(
+            geo = geo,
+            currentUuid = currentUuid,
+            onContinent = { vm.selectGeoContinent(it) },
+            onCountry = vm::selectGeoCountry,
+            onRegion = vm::selectGeoRegion,
+            onRetry = vm::retryGeo,
+            onPlay = vm::play, // la fenêtre reste ouverte : on peut « zapper » d'une station à l'autre
+            onAddFavorite = openFavoritesFor,
+            onClose = vm::closeGeo,
+        )
+    }
 
     if (searchOpen) {
         val query by vm.searchQuery.collectAsStateWithLifecycle()
@@ -182,6 +200,7 @@ fun HomeBands(
     onFavorites: () -> Unit,
     onSearch: () -> Unit,
     onAbout: () -> Unit,
+    onWorld: () -> Unit = {},
     volume: Float = 0.6f,
     onVolumeChange: (Float) -> Unit = {},
     castName: String? = null,
@@ -199,7 +218,7 @@ fun HomeBands(
             // Hauteurs relatives : en cours 1,25 · trois bandes de stations 1 · contrôles 0,5
             val band = Modifier.weight(1f)
 
-            NowPlayingBand(current, player, track, trackArt, castName, onFavorites, onSearch, onAbout, Modifier.weight(1.25f))
+            NowPlayingBand(current, player, track, trackArt, castName, onFavorites, onSearch, onWorld, onAbout, Modifier.weight(1.25f))
 
             StationBand(
                 title = stringResource(R.string.band_recent),
@@ -250,6 +269,7 @@ private fun NowPlayingBand(
     castName: String?,
     onFavorites: () -> Unit,
     onSearch: () -> Unit,
+    onWorld: () -> Unit,
     onAbout: () -> Unit,
     modifier: Modifier,
 ) {
@@ -344,15 +364,20 @@ private fun NowPlayingBand(
                     modifier = Modifier.fillMaxWidth().basicMarquee(),
                 )
             }
-            // Colonne de droite : réglages (langue + infos) en haut, favoris, recherche en bas
-            Column(
-                verticalArrangement = Arrangement.SpaceBetween,
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxHeight(),
-            ) {
-                SettingsMenu(onAbout = onAbout)
-                SideIcon(Icons.Filled.Favorite, stringResource(R.string.band_favorites), onFavorites)
-                SideIcon(Icons.Filled.Search, stringResource(R.string.search), onSearch)
+            // Colonne de droite : réglages (langue + infos) en haut, favoris, tuner du monde, recherche en bas
+            androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxHeight()) {
+                // Petits écrans : les boutons rétrécissent un peu pour tenir à quatre
+                val icon = ((maxHeight - SIDE_ICON) / 3).coerceIn(32.dp, SIDE_ICON)
+                Column(
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxHeight(),
+                ) {
+                    SettingsMenu(onAbout = onAbout)
+                    SideIcon(Icons.Filled.Favorite, stringResource(R.string.band_favorites), onFavorites, icon)
+                    SideIcon(Icons.Filled.Public, stringResource(R.string.geo_title), onWorld, icon)
+                    SideIcon(Icons.Filled.Search, stringResource(R.string.search), onSearch, icon)
+                }
             }
         }
     }
