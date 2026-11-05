@@ -317,7 +317,10 @@ private fun DialStrip(items: List<DialItem>, selected: Int, width: Dp, onSelecte
                     ) { scope.launch { state.animateScrollToItem(index) } }
                     .semantics { contentDescription = item.title },
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 6.dp)) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                ) {
                     Text(
                         item.title,
                         color = DialAmber,
@@ -329,12 +332,14 @@ private fun DialStrip(items: List<DialItem>, selected: Int, width: Dp, onSelecte
                         textAlign = TextAlign.Center,
                     )
                     if (item.subtitle.isNotEmpty()) {
+                        // Nombre de stations calé à droite : l'aiguille du centre ne le coupe plus
                         Text(
                             item.subtitle,
                             color = DialAmberDim,
                             fontFamily = FontFamily.Monospace,
                             fontSize = 10.sp,
                             maxLines = 1,
+                            modifier = Modifier.align(Alignment.End),
                         )
                     }
                 }
