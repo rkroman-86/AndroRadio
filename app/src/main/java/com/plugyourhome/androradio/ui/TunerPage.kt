@@ -8,6 +8,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
@@ -42,9 +43,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -71,6 +69,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -125,26 +124,14 @@ fun TunerPage(
     val continents = Continent.entries.map { DialItem(it.name, stringResource(it.label)) }
     val allLabel = stringResource(R.string.geo_all)
 
-    FloatingPage(stringResource(R.string.geo_title), onClose) {
+    FloatingPage(
+        title = stringResource(R.string.geo_title),
+        onClose = onClose,
+        actions = { StyleKnob(modern, onModern) },
+    ) {
         val countries = geo.countries?.map { DialItem(it.code, it.name, it.stations.toString()) }
         val regions = geo.regions?.map {
             DialItem(it.key ?: "*", if (it.key == null) allLabel else it.name, it.stations.toString())
-        }
-
-        // Choix de la vue : cadrans rétro (par défaut) ou listes déroulantes modernes
-        SingleChoiceSegmentedButtonRow(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-        ) {
-            SegmentedButton(
-                selected = !modern,
-                onClick = { onModern(false) },
-                shape = SegmentedButtonDefaults.itemShape(0, 2),
-            ) { Text(stringResource(R.string.geo_style_retro)) }
-            SegmentedButton(
-                selected = modern,
-                onClick = { onModern(true) },
-                shape = SegmentedButtonDefaults.itemShape(1, 2),
-            ) { Text(stringResource(R.string.geo_style_modern)) }
         }
 
         Crossfade(targetState = modern, label = "geoStyle") { isModern ->
@@ -334,6 +321,97 @@ private fun ModernSelector(label: String, items: List<DialItem>?, selected: Int,
             }
         }
     }
+}
+
+/**
+ * Bouton rond façon vieux poste pour choisir la vue : index à gauche = Rétro, à droite = Moderne.
+ * Un appui le fait basculer ; on peut aussi le « tourner » en glissant à gauche ou à droite.
+ */
+@Composable
+private fun StyleKnob(modern: Boolean, onChange: (Boolean) -> Unit) {
+    val haptic = LocalHapticFeedback.current
+    val angle by animateFloatAsState(
+        targetValue = if (modern) 50f else -50f,
+        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.55f, stiffness = 400f),
+        label = "knob",
+    )
+    val current by rememberUpdatedState(modern)
+    val set: (Boolean) -> Unit = { value ->
+        if (value != current) {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            onChange(value)
+        }
+    }
+    val label = stringResource(if (modern) R.string.geo_style_modern else R.string.geo_style_retro)
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            letterSpacing = 1.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Box(
+            Modifier
+                .size(48.dp)
+                .pointerInput(Unit) {
+                    var drag = 0f
+                    detectHorizontalDragGestures(
+                        onDragStart = { drag = 0f },
+                        onDragEnd = {
+                            if (drag > 12.dp.toPx()) set(true) else if (drag < -12.dp.toPx()) set(false)
+                        },
+                    ) { _, delta -> drag += delta }
+                }
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) { set(!current) }
+                .semantics { contentDescription = label }
+                .drawBehind { drawKnob(angle, modern) },
+        )
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawKnob(angle: Float, modern: Boolean) {
+    val c = center
+    val r = 13.dp.toPx()
+    fun dir(deg: Float) = Math.toRadians(deg.toDouble()).let { Offset(kotlin.math.sin(it).toFloat(), -kotlin.math.cos(it).toFloat()) }
+
+    // Repères des deux positions, sur le « cadran » autour du bouton
+    listOf(-50f to !modern, 50f to modern).forEach { (deg, on) ->
+        drawCircle(
+            color = if (on) DialAmber else DialAmberDim.copy(alpha = 0.35f),
+            radius = 2.2.dp.toPx(),
+            center = c + dir(deg) * (r + 6.dp.toPx()),
+        )
+    }
+    // Ombre portée
+    drawCircle(Color.Black.copy(alpha = 0.25f), r + 1.5.dp.toPx(), c + Offset(0f, 1.5.dp.toPx()))
+    // Bakélite
+    drawCircle(
+        Brush.radialGradient(
+            listOf(Color(0xFF6B4630), DialWoodTop, DialWoodBottom),
+            center = c - Offset(r * 0.35f, r * 0.35f),
+            radius = r * 1.6f,
+        ),
+        r,
+        c,
+    )
+    // Moletage tout autour, qui tourne avec le bouton
+    for (i in 0 until 24) {
+        val d = dir(angle + i * 15f)
+        drawLine(Color.Black.copy(alpha = 0.45f), c + d * (r - 2.5.dp.toPx()), c + d * r, 1.dp.toPx())
+    }
+    // Index crème
+    val d = dir(angle)
+    drawLine(
+        Color(0xFFF3E3C3),
+        c + d * (r * 0.15f),
+        c + d * (r - 3.5.dp.toPx()),
+        2.5.dp.toPx(),
+        cap = androidx.compose.ui.graphics.StrokeCap.Round,
+    )
 }
 
 @Composable
