@@ -120,10 +120,14 @@ class PlaybackService : MediaSessionService() {
      * et le service s'arrête, comme demandé.
      */
     override fun onTaskRemoved(rootIntent: Intent?) {
-        runCatching { dlnaOutput?.disconnect() } // arrête l'appareil DLNA
+        // Arrête l'appareil DLNA et remet le lecteur normal dans la session
+        // (avant, on vidait la liste du lecteur DLNA, ce qui plantait l'appli)
+        runCatching { disconnectDlna(resume = false) }
         mediaSession?.player?.let { player ->
             player.stop()
-            player.clearMediaItems()
+            if (player.isCommandAvailable(Player.COMMAND_CHANGE_MEDIA_ITEMS)) {
+                runCatching { player.clearMediaItems() }
+            }
         }
         runCatching { CastContext.getSharedInstance(this).sessionManager.endCurrentSession(true) }
         pauseAllPlayersAndStopSelf()
