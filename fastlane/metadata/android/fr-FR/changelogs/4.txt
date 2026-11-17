@@ -1,0 +1,1 @@
+Correction d’un plantage à la fermeture de l’appli pendant une diffusion vers une enceinte DLNA. Petites améliorations d’affichage sur les Android récents.

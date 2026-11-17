@@ -1,0 +1,1 @@
+Fixed a crash when closing the app while playing on a DLNA speaker. Small display improvements on recent Android versions.

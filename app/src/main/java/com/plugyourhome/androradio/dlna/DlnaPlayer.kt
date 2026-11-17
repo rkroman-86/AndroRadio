@@ -123,6 +123,53 @@ class DlnaPlayer(
         return Futures.immediateVoidFuture()
     }
 
+    // La session annonce COMMAND_CHANGE_MEDIA_ITEMS : ajouter, retirer et déplacer des éléments
+    // doivent donc être gérés (un oubli faisait planter l'appli à sa fermeture pendant une diffusion DLNA).
+
+    override fun handleAddMediaItems(index: Int, mediaItems: MutableList<MediaItem>): ListenableFuture<*> {
+        val stations = mediaItems.mapNotNull { Station.fromMetadata(it.mediaMetadata) }
+        if (stations.isNotEmpty()) {
+            val at = index.coerceIn(0, queue.size)
+            queue = queue.take(at) + stations + queue.drop(at)
+            if (queue.size > stations.size && at <= this.index) this.index += stations.size
+            invalidateState()
+        }
+        return Futures.immediateVoidFuture()
+    }
+
+    override fun handleRemoveMediaItems(fromIndex: Int, toIndex: Int): ListenableFuture<*> {
+        val from = fromIndex.coerceIn(0, queue.size)
+        val to = toIndex.coerceIn(from, queue.size)
+        if (from < to) {
+            val removesCurrent = index in from until to
+            queue = queue.take(from) + queue.drop(to)
+            when {
+                removesCurrent -> {
+                    output.stop()
+                    index = index.coerceAtMost((queue.size - 1).coerceAtLeast(0))
+                }
+                index >= to -> index -= to - from
+            }
+            invalidateState()
+        }
+        return Futures.immediateVoidFuture()
+    }
+
+    override fun handleMoveMediaItems(fromIndex: Int, toIndex: Int, newIndex: Int): ListenableFuture<*> {
+        val from = fromIndex.coerceIn(0, queue.size)
+        val to = toIndex.coerceIn(from, queue.size)
+        if (from < to) {
+            val current = queue.getOrNull(index)
+            val moved = queue.subList(from, to)
+            val rest = queue.take(from) + queue.drop(to)
+            val at = newIndex.coerceIn(0, rest.size)
+            queue = rest.take(at) + moved + rest.drop(at)
+            index = queue.indexOfFirst { it.uuid == current?.uuid }.coerceAtLeast(0)
+            invalidateState()
+        }
+        return Futures.immediateVoidFuture()
+    }
+
     override fun handleSeek(mediaItemIndex: Int, positionMs: Long, seekCommand: Int): ListenableFuture<*> {
         if (mediaItemIndex in queue.indices && mediaItemIndex != index) playAt(mediaItemIndex)
         return Futures.immediateVoidFuture()
